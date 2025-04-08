@@ -1,9 +1,24 @@
+require('dotenv').config({ path: '../../.env' }); // Specify the relative path to the .env file
 let express = require('express');
 let app = express();
 let mysql = require('mysql');
-let cors = require('cors')
+let cors = require('cors');
 const util = require('util');
-let bodyParser = require('body-parser')
+let bodyParser = require('body-parser');
+
+app.use(bodyParser.json());
+app.use(cors());
+
+// Create MySQL connection using environment variables
+let con = mysql.createConnection({
+    host: process.env.DB_HOST,
+    user: process.env.DB_USER,
+    password: process.env.DB_PASSWORD,
+    database: process.env.DB_NAME,
+});
+
+const sqlquery = util.promisify(con.query).bind(con);
+
 app.use(bodyParser.json())
 const {body, query, validationResult} = require('express-validator')
 
@@ -11,17 +26,7 @@ const bcrypt = require('bcrypt');
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json()); // for reading JSON
 
-
-let con = mysql.createConnection({
-    host: "localhost",
-    user: "root",
-    password: "password",
-    database: "recipedb"
-});
-const sqlquery = util.promisify(con.query).bind(con);
-
 app.use(express.static('public'));
-app.use(cors())
 
 app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
@@ -157,7 +162,98 @@ app.put('/recipes',
         }
     });
 
+app.post("/api/recipes", async (req, res) => {
+    const { name, instructions, cookingtime, ingredients, tags } = req.body;
+  
+    try {
+      // Insert recipe into the `recipes` table
+      const recipeResult = await sqlquery(
+        "INSERT INTO recipes (name, instructions, cookingtime) VALUES (?, ?, ?)",
+        [name, instructions, cookingtime]
+      );
+      const recipeId = recipeResult.insertId;
+  
+      // Insert ingredients into the `ingredients` table and link them to the recipe
+      for (const ingredient of ingredients) {
+        const [ingredientRow] = await sqlquery(
+          "SELECT id FROM ingredients WHERE name = ?",
+          [ingredient.name]
+        );
+  
+        let ingredientId;
+        if (ingredientRow) {
+          ingredientId = ingredientRow.id;
+        } else {
+          const ingredientResult = await sqlquery(
+            "INSERT INTO ingredients (name) VALUES (?)",
+            [ingredient.name]
+          );
+          ingredientId = ingredientResult.insertId;
+        }
+  
+        await sqlquery(
+          "INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity, unit) VALUES (?, ?, ?, ?)",
+          [recipeId, ingredientId, ingredient.quantity, ingredient.unit]
+        );
+      }
+  
+      // Insert tags into the `tags` table and link them to the recipe
+      for (const tag of tags) {
+        const [tagRow] = await sqlquery("SELECT id FROM tags WHERE name = ?", [
+          tag,
+        ]);
+  
+        let tagId;
+        if (tagRow) {
+          tagId = tagRow.id;
+        } else {
+          const tagResult = await sqlquery(
+            "INSERT INTO tags (name) VALUES (?)",
+            [tag]
+          );
+          tagId = tagResult.insertId;
+        }
+  
+        await sqlquery(
+          "INSERT INTO recipe_tags (recipe_id, tag_id) VALUES (?, ?)",
+          [recipeId, tagId]
+        );
+      }
+  
+      res.status(200).send({ message: "Recipe added successfully!" });
+    } catch (error) {
+      console.error("Error adding recipe:", error);
+      res.status(500).send({ error: "Failed to add recipe." });
+    }
+  });
 
+app.get("/api/recipes-with-ingredients", async (req, res) => {
+  try {
+    const recipes = await sqlquery("SELECT * FROM recipes");
+
+    const recipesWithIngredients = await Promise.all(
+      recipes.map(async (recipe) => {
+        const ingredients = await sqlquery(
+          `SELECT i.name, ri.quantity, ri.unit
+           FROM recipe_ingredients ri
+           JOIN ingredients i ON ri.ingredient_id = i.id
+           WHERE ri.recipe_id = ?`,
+          [recipe.id]
+        );
+
+        return {
+          ...recipe,
+          ingredients,
+        };
+      })
+    );
+
+    res.status(200).send(recipesWithIngredients);
+  } catch (error) {
+    console.error("Error fetching recipes with ingredients:", error);
+    res.status(500).send({ error: "Failed to fetch recipes." });
+  }
+});
 
 let server = app.listen(5000, function () {
     let host = server.address().address

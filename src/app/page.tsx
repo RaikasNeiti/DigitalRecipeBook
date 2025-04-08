@@ -1,45 +1,119 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
+import Header from "./components/Header";
+import RecipeCard from "./components/RecipeCard";
+import RecipeModal from "./components/RecipeModal";
+import AddRecipeModal from "./components/AddRecipeModal";
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
   const [formData, setFormData] = useState({
     name: "",
-    ingredients: "",
     instructions: "",
     cookingtime: "",
-    maker: "",
+    ingredients: [{ name: "", quantity: "", unit: "" }],
+    tags: "",
   });
+  const [selectedRecipe, setSelectedRecipe] = useState<{
+    id: number;
+    name: string;
+    cookingtime: string;
+    ingredients: { name: string; quantity: string; unit: string }[];
+    instructions: string;
+    tags?: string[];
+  } | null>(null);
+  const [recipes, setRecipes] = useState<
+    {
+      id: number;
+      name: string;
+      cookingtime: string;
+      ingredients: { name: string; quantity: string; unit: string }[];
+      instructions: string;
+      tags?: string[];
+    }[]
+  >([]);
 
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
 
-  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {
-    const { id, value } = e.target;
-    setFormData((prev) => ({ ...prev, [id]: value }));
+  interface Recipe {
+    id: number;
+    name: string;
+    cookingtime: string;
+    ingredients: { name: string; quantity: string; unit: string }[];
+    instructions: string;
+    tags?: string[];
+  }
+
+  const handleOpenRecipeModal = (recipe: Recipe) => {
+    setSelectedRecipe(recipe);
+    setIsRecipeModalOpen(true);
+  };
+  const handleCloseRecipeModal = () => setIsRecipeModalOpen(false);
+
+  const fetchRecipes = async () => {
+    try {
+      const response = await fetch("http://192.168.1.87:5000/api/recipes-with-ingredients");
+      if (response.ok) {
+        const data = await response.json();
+        setRecipes(data);
+      } else {
+        console.error("Failed to fetch recipes.");
+      }
+    } catch (error) {
+      console.error("Error fetching recipes:", error);
+    }
+  };
+
+  useEffect(() => {
+    fetchRecipes();
+  }, []);
+
+  const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>, index?: number) => {
+    const { id, name, value } = e.target;
+
+    if (typeof index === "number") {
+      const updatedIngredients = [...formData.ingredients];
+      updatedIngredients[index] = { ...updatedIngredients[index], [name]: value };
+      setFormData((prev) => ({ ...prev, ingredients: updatedIngredients }));
+    } else {
+      setFormData((prev) => ({ ...prev, [id]: value }));
+    }
+  };
+
+  const addIngredientField = () => {
+    setFormData((prev) => ({
+      ...prev,
+      ingredients: [...prev.ingredients, { name: "", quantity: "", unit: "" }],
+    }));
   };
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://localhost:5000/api/recipes", {
+      const response = await fetch("http://192.168.1.87:5000/api/recipes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
         },
-        body: JSON.stringify(formData),
+        body: JSON.stringify({
+          ...formData,
+          tags: formData.tags.split(",").map((tag) => tag.trim()),
+        }),
       });
 
       if (response.ok) {
         alert("Recipe added successfully!");
         setFormData({
           name: "",
-          ingredients: "",
           instructions: "",
           cookingtime: "",
-          maker: "",
+          ingredients: [{ name: "", quantity: "", unit: "" }],
+          tags: "",
         });
         handleCloseModal();
+        fetchRecipes(); // Refresh recipes after adding a new one
       } else {
         alert("Failed to add recipe.");
       }
@@ -51,16 +125,18 @@ export default function Home() {
 
   return (
     <div className="min-h-screen bg-black text-white">
-      {/* Title */}
-      <header className="text-center py-4">
-        <h1 className="text-4xl font-bold">Digital Recipe Book</h1>
-      </header>
+      <Header />
 
       {/* Recipes Section */}
       <main className="p-8">
-        <div className="text-center">
-          <p className="text-lg">Here is where your recipes will be displayed.</p>
-          {/* Add your recipes here */}
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+          {recipes.map((recipe) => (
+            <RecipeCard
+              key={recipe.id}
+              recipe={recipe}
+              onClick={() => handleOpenRecipeModal(recipe)}
+            />
+          ))}
         </div>
       </main>
 
@@ -73,104 +149,18 @@ export default function Home() {
         +
       </button>
 
-      {/* Modal */}
+      {/* Modals */}
       {isModalOpen && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
-          <div className="bg-white text-black rounded-lg p-8 w-[800px] max-w-full">
-            <h2 className="text-2xl font-bold mb-4">Add Recipe</h2>
-            <form onSubmit={handleSubmit}>
-              {/* Recipe Name */}
-              <div className="mb-4">
-                <label className="block font-medium mb-1" htmlFor="name">
-                  Recipe Name
-                </label>
-                <input
-                  type="text"
-                  id="name"
-                  className="w-full border rounded p-2"
-                  placeholder="Enter recipe name"
-                  value={formData.name}
-                  onChange={handleChange}
-                />
-              </div>
-
-              {/* Ingredient List */}
-              <div className="mb-4">
-                <label className="block font-medium mb-1" htmlFor="ingredients">
-                  Ingredients
-                </label>
-                <textarea
-                  id="ingredients"
-                  className="w-full border rounded p-2 h-32"
-                  placeholder="Enter ingredients"
-                  value={formData.ingredients}
-                  onChange={handleChange}
-                ></textarea>
-              </div>
-
-              {/* Instructions */}
-              <div className="mb-4">
-                <label className="block font-medium mb-1" htmlFor="instructions">
-                  Instructions
-                </label>
-                <textarea
-                  id="instructions"
-                  className="w-full border rounded p-2 h-32"
-                  placeholder="Enter instructions"
-                  value={formData.instructions}
-                  onChange={handleChange}
-                ></textarea>
-              </div>
-
-              {/* Cooking Time */}
-              <div className="mb-4">
-                <label className="block font-medium mb-1" htmlFor="cookingtime">
-                  Cooking Time (minutes)
-                </label>
-                <input
-                  type="number"
-                  id="cookingtime"
-                  className="w-full border rounded p-2"
-                  placeholder="Enter cooking time"
-                  value={formData.cookingtime}
-                  onChange={handleChange}
-                />
-              </div>
-
-              {/* Maker */}
-              <div className="mb-4">
-                <label className="block font-medium mb-1" htmlFor="maker">
-                  Maker
-                </label>
-                <input
-                  type="text"
-                  id="maker"
-                  className="w-full border rounded p-2"
-                  placeholder="Enter your name"
-                  value={formData.maker}
-                  onChange={handleChange}
-                />
-              </div>
-
-              {/* Buttons */}
-              <div className="flex justify-end gap-4">
-                <button
-                  type="button"
-                  className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400"
-                  onClick={handleCloseModal}
-                >
-                  Cancel
-                </button>
-                <button
-                  type="submit"
-                  className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-                >
-                  Save
-                </button>
-              </div>
-            </form>
-          </div>
-        </div>
+        <AddRecipeModal
+          formData={formData}
+          onChange={handleChange}
+          onAddIngredient={addIngredientField}
+          onClose={handleCloseModal}
+          onSubmit={handleSubmit}
+        />
+      )}
+      {isRecipeModalOpen && selectedRecipe && (
+        <RecipeModal recipe={selectedRecipe} onClose={handleCloseRecipeModal} />
       )}
     </div>
   );
