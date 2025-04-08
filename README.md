@@ -16,10 +16,7 @@ CREATE TABLE ingredients (
     name VARCHAR(100),
     PRIMARY KEY(id)
 );
-```
 
-## Recipe Ingredients Table
-```bash
 CREATE TABLE recipe_ingredients (
     id INT AUTO_INCREMENT,
     recipe_id INT,
@@ -39,10 +36,7 @@ CREATE TABLE tags (
     name VARCHAR(50),
     PRIMARY KEY(id)
 );
-```
 
-## Recipe Tags Table
-```bash
 CREATE TABLE recipe_tags (
     recipe_id INT,
     tag_id INT,
