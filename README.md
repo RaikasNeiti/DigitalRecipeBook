@@ -1,3 +1,70 @@
+# The Recipe Database Setup
+## Recipe Fact Table
+```bash
+CREATE TABLE recipes (
+    id INT AUTO_INCREMENT,
+    name VARCHAR(100),
+    instructions TEXT,
+    cookingtime INT,
+    PRIMARY KEY(id)
+);
+```
+## Ingredients Table
+```bash
+CREATE TABLE ingredients (
+    id INT AUTO_INCREMENT,
+    name VARCHAR(100),
+    PRIMARY KEY(id)
+);
+```
+
+## Recipe Ingredients Table
+```bash
+CREATE TABLE recipe_ingredients (
+    id INT AUTO_INCREMENT,
+    recipe_id INT,
+    ingredient_id INT,
+    quantity DECIMAL(10, 2),
+    unit VARCHAR(20),
+    PRIMARY KEY(id),
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id),
+    FOREIGN KEY (ingredient_id) REFERENCES ingredients(id)
+);
+```
+
+## Tags Table
+```bash
+CREATE TABLE tags (
+    id INT AUTO_INCREMENT,
+    name VARCHAR(50),
+    PRIMARY KEY(id)
+);
+```
+
+## Recipe Tags Table
+```bash
+CREATE TABLE recipe_tags (
+    recipe_id INT,
+    tag_id INT,
+    PRIMARY KEY (recipe_id, tag_id),
+    FOREIGN KEY (recipe_id) REFERENCES recipes(id),
+    FOREIGN KEY (tag_id) REFERENCES tags(id)
+);
+```
+
+## Unit Conversion Table
+```bash
+CREATE TABLE unit_conversions (
+    id INT AUTO_INCREMENT,
+    ingredient_id INT,
+    from_unit VARCHAR(20),
+    to_unit VARCHAR(20),
+    factor DECIMAL(10, 4),
+    PRIMARY KEY(id),
+    FOREIGN KEY (ingredient_id) REFERENCES ingredients(id)
+);
+```
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started
