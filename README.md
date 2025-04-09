@@ -6,7 +6,9 @@ CREATE TABLE recipes (
     name VARCHAR(100),
     instructions TEXT,
     cookingtime INT,
-    PRIMARY KEY(id)
+    servings_id INT,
+    PRIMARY KEY(id),
+    FOREIGN KEY (servings_id) REFERENCES servings(id)
 );
 ```
 ## Ingredients Table
@@ -26,6 +28,15 @@ CREATE TABLE recipe_ingredients (
     PRIMARY KEY(id),
     FOREIGN KEY (recipe_id) REFERENCES recipes(id),
     FOREIGN KEY (ingredient_id) REFERENCES ingredients(id)
+);
+```
+## Servings Table
+```bash
+CREATE TABLE servings (
+    id INT AUTO_INCREMENT,
+    amount DECIMAL(10, 2),        -- numeric value for scaling
+    unit VARCHAR(50),             -- e.g. 'people', 'cookies', 'ml', 'slices'
+    PRIMARY KEY(id)
 );
 ```
 
