@@ -1,226 +1,88 @@
 "use client";
-import React, { useState, useEffect } from "react";
-import Header from "./components/Header";
-import RecipeCard from "./components/RecipeCard";
-import RecipeModal from "./components/RecipeModal";
-import AddRecipeModal from "./components/AddRecipeModal";
-import SearchBar from "./components/SearchBar"; // Import the SearchBar component
-import TagNavbar from "./components/TagNavbar"; // Import the TagNavbar component
+import React, { useState } from "react";
 
-export default function Home() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
-  const [searchQuery, setSearchQuery] = useState(""); // State for search query
-  const [selectedTag, setSelectedTag] = useState<string | null>(null); // State for selected tag
-  const [tags, setTags] = useState<string[]>([]); // State for tags
-  const [formData, setFormData] = useState({
-    name: "",
-    instructions: "",
-    cookingtime: "",
-    servings: { amount: "", unit: "" }, // Add default structure for servings
-    ingredients: [{ name: "", quantity: "", unit: "" }],
-    tags: [] as string[], // Ensure tags is an array of strings
-  });
-  const [selectedRecipe, setSelectedRecipe] = useState<{
-    id: number;
-    name: string;
-    cookingtime: string;
-    ingredients: { name: string; quantity: string; unit: string }[];
-    instructions: string;
-    tags?: string[];
-  } | null>(null);
-  const [recipes, setRecipes] = useState<
-    {
-      id: number;
-      name: string;
-      cookingtime: string;
-      ingredients: { name: string; quantity: string; unit: string }[];
-      instructions: string;
-      tags?: string[];
-    }[]
-  >([]);
+export default function RecipePage() {
+  const [selectedCategory, setSelectedCategory] = useState<string | null>("All");
+  const categories = ["All", "Breakfast", "Lunch", "Dinner", "Appetizer", "Dessert", "Drink"];
+  const recipes = [
+    { name: "Pancakes", time: "10 min", category: "Dessert", image: "/images/pancakes.jpg" },
+    { name: "Avocado Toast", time: "12 min", category: "Breakfast, Lunch", image: "/images/avocado-toast.jpg" },
+    { name: "Smoothie", time: "10 min", category: "Drink", image: "/images/smoothie.jpg" },
+    { name: "Bolognaise", time: "25 min", category: "Dinner", image: "/images/bolognaise.jpeg" },
+    { name: "Fruit Salad", time: "15 min", category: "Dessert", image: "/images/fruit-salad.jpg" },
+    { name: "Ceaser Salad", time: "15 min", category: "Lunch, Dinner", image: "/images/ceaser-salad.jpg" },
+    { name: "Red Velvet Cake", time: "50 min", category: "Dessert", image: "/images/red-velvet-cake.jpg" },
+    { name: "Wrap", time: "10 min", category: "Lunch, Dinner", image: "/images/wrap.jpg" },
+    { name: "Sweet and Sour", time: "25 min", category: "Dinner", image: "/images/sweet-and-sour.jpg" },
+    { name: "Cookies", time: "25 min", category: "Dessert", image: "/images/cookies.jpg" },
+    { name: "Taco's", time: "15 min", category: "Dinner", image: "/images/tacos.jpg" },
+    { name: "Yoghurt Bowl", time: "10 min", category: "Breakfast", image: "/images/yoghurt-bowl.jpg" },
+  ];
 
-  const handleOpenModal = () => setIsModalOpen(true);
-  const handleCloseModal = () => setIsModalOpen(false);
-
-  interface Recipe {
-    id: number;
-    name: string;
-    cookingtime: string;
-    ingredients: { name: string; quantity: string; unit: string }[];
-    instructions: string;
-    tags?: string[];
-  }
-
-  const handleOpenRecipeModal = (recipe: Recipe) => {
-    setSelectedRecipe(recipe);
-    setIsRecipeModalOpen(true);
-  };
-  const handleCloseRecipeModal = () => setIsRecipeModalOpen(false);
-
-  const fetchRecipes = async () => {
-    try {
-      const response = await fetch("http://192.168.1.87:5000/api/recipes-with-ingredients");
-      if (response.ok) {
-        const data = await response.json();
-        setRecipes(data);
-      } else {
-        console.error("Failed to fetch recipes.");
-      }
-    } catch (error) {
-      console.error("Error fetching recipes:", error);
-    }
-  };
-
-  const fetchTags = async () => {
-    try {
-      const response = await fetch("http://192.168.1.87:5000/api/tags");
-      if (response.ok) {
-        const data = await response.json();
-        setTags(data);
-      } else {
-        console.error("Failed to fetch tags.");
-      }
-    } catch (error) {
-      console.error("Error fetching tags:", error);
-    }
-  };
-
-  useEffect(() => {
-    fetchRecipes();
-    fetchTags(); // Fetch tags when the component mounts
-  }, []);
-
-  const handleChange = (
-    e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>,
-    index?: number
-  ) => {
-    const { id, name, value } = e.target;
-
-    if (id.startsWith("servings.")) {
-      // Update servings property
-      const key = id.split(".")[1];
-      setFormData((prev) => ({
-        ...prev,
-        servings: { ...prev.servings, [key]: value },
-      }));
-    } else if (typeof index === "number") {
-      // Update ingredients array
-      const updatedIngredients = [...formData.ingredients];
-      updatedIngredients[index] = { ...updatedIngredients[index], [name]: value };
-      setFormData((prev) => ({ ...prev, ingredients: updatedIngredients }));
-    } else {
-      // Update other properties
-      setFormData((prev) => ({ ...prev, [id]: value }));
-    }
-  };
-
-  const addIngredientField = () => {
-    setFormData((prev) => ({
-      ...prev,
-      ingredients: [...prev.ingredients, { name: "", quantity: "", unit: "" }],
-    }));
-  };
-
-  const removeIngredientField = (index: number) => {
-    setFormData((prev) => ({
-      ...prev,
-      ingredients: prev.ingredients.filter((_, i) => i !== index),
-    }));
-  };
-
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    try {
-      const response = await fetch("http://192.168.1.87:5000/api/recipes", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...formData,
-          tags: formData.tags,
-        }),
-      });
-
-      if (response.ok) {
-        alert("Recipe added successfully!");
-        setFormData({
-          name: "",
-          instructions: "",
-          cookingtime: "",
-          servings: { amount: "", unit: "" }, // Add default structure for servings
-          ingredients: [{ name: "", quantity: "", unit: "" }],
-          tags: [], // Ensure tags is an array
-        });
-        handleCloseModal();
-        fetchRecipes(); // Refresh recipes after adding a new one
-      } else {
-        alert("Failed to add recipe.");
-      }
-    } catch (error) {
-      console.error("Error adding recipe:", error);
-      alert("An error occurred while adding the recipe.");
-    }
-  };
-
-  // Filter recipes based on the search query and selected tag
-  const filteredRecipes = recipes.filter((recipe) => {
-    const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTag = selectedTag ? recipe.tags?.includes(selectedTag) : true;
-    return matchesSearch && matchesTag;
-  });
+  const filteredRecipes = selectedCategory === "All"
+    ? recipes
+    : recipes.filter((recipe) => recipe.category.includes(selectedCategory!));
 
   return (
-    <div className="min-h-screen bg-black text-white">
-      <Header />
+    <div className="min-h-screen bg-white">
+      {/* Header */}
+      <header className="bg-yellow-400 text-black py-4 px-8 flex items-center">
+        <div className="flex items-center space-x-16">
+          <h1 className="text-2xl font-bold text-white">Digital Recipe Book</h1>
+          <nav className="flex space-x-8">
+            <a href="#" className="text-lg font-medium hover:underline text-black">Home</a>
+            <a href="#" className="text-lg font-medium hover:underline text-gray-600">Recipe Roulette</a>
+            <a href="#" className="text-lg font-medium hover:underline text-gray-600">Shopping List</a>
+          </nav>
+        </div>
+      </header>
 
       {/* Search Bar */}
-      <SearchBar searchQuery={searchQuery} onSearchChange={setSearchQuery} />
+      <div className="bg-white py-4 px-8 flex justify-center">
+        <input
+          type="text"
+          placeholder="Search any recipe"
+          className="w-[50%] p-2 rounded border border-gray-300"
+        />
+      </div>
 
-      {/* Navbar for Tags */}
-      <TagNavbar
-        tags={tags}
-        selectedTag={selectedTag}
-        onTagSelect={setSelectedTag}
-      />
+      {/* Categories */}
+      <div className="flex justify-center space-x-4 py-4 bg-white">
+        {categories.map((category) => (
+          <button
+            key={category}
+            className={`text-lg text-gray-600 font-medium ${
+              selectedCategory === category ? "border-b-2 border-yellow-400" : "text-gray-300"
+            } hover:text-black`}
+            onClick={() => setSelectedCategory(category)}
+          >
+            {category}
+          </button>
+        ))}
+      </div>
 
-      {/* Recipes Section */}
-      <main className="px-20 py-4"> {/* Added horizontal padding (px-8) */}
-        <div className="grid gap-6 justify-center grid-cols-[repeat(auto-fill,minmax(400px,1fr))]">
-          {filteredRecipes.map((recipe) => (
-            <RecipeCard
-              key={recipe.id}
-              recipe={recipe}
-              onClick={() => handleOpenRecipeModal(recipe)}
-            />
+      {/* Recipes Grid */}
+      <main className="px-8 py-4">
+        <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
+          {filteredRecipes.map((recipe, index) => (
+            <div
+              key={index}
+              className="bg-white rounded-lg shadow-lg overflow-hidden hover:scale-105 transition transform"
+            >
+              <img
+                src={recipe.image}
+                alt={recipe.name}
+                className="w-full h-40 object-cover"
+              />
+              <div className="p-4">
+                <h2 className="text-lg font-bold text-gray-600 text-center">{recipe.name}</h2>
+                <p className="text-sm text-gray-500 text-center">⏱ {recipe.time}</p>
+                <p className="text-sm text-gray-400 text-center">{recipe.category}</p>
+              </div>
+            </div>
           ))}
         </div>
       </main>
-
-      {/* Floating Add Recipe Button */}
-      <button
-        className="fixed bottom-8 right-8 rounded-full bg-blue-500 text-white text-3xl w-16 h-16 flex items-center justify-center shadow-lg hover:bg-blue-600 transition"
-        aria-label="Add Recipe"
-        onClick={handleOpenModal}
-      >
-        +
-      </button>
-
-      {/* AddRecipeModal */}
-      {isModalOpen && (
-        <AddRecipeModal
-          formData={formData}
-          onChange={handleChange}
-          onAddIngredient={addIngredientField}
-          onRemoveIngredient={removeIngredientField} // Pass the remove function
-          onClose={handleCloseModal}
-          onSubmit={handleSubmit}
-        />
-      )}
-      {isRecipeModalOpen && selectedRecipe && (
-        <RecipeModal recipe={selectedRecipe} onClose={handleCloseRecipeModal} />
-      )}
     </div>
   );
 }
