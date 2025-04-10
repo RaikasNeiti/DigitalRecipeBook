@@ -16,6 +16,7 @@ RUN npm install
 # Copy the rest of the application code from the root/src/app folder
 
 COPY ./src/app /recipe/app
+COPY ./public /recipe/public
 
 # Expose the frontend port
 EXPOSE 3000

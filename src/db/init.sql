@@ -1,5 +1,4 @@
 -- This SQL script initializes the database
-CREATE DATABASE recipedb;
 USE recipedb;
 
 CREATE TABLE servings (

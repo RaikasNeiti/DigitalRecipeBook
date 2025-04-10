@@ -60,7 +60,7 @@ export default function Home() {
 
   const fetchRecipes = async () => {
     try {
-      const response = await fetch("http://192.168.1.87:5000/api/recipes-with-ingredients");
+      const response = await fetch("http://192.168.1.125:5000/api/recipes-with-ingredients");
       if (response.ok) {
         const data = await response.json();
         setRecipes(data);
@@ -74,7 +74,7 @@ export default function Home() {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch("http://192.168.1.87:5000/api/tags");
+      const response = await fetch("http://192.168.1.125:5000/api/tags");
       if (response.ok) {
         const data = await response.json();
         setTags(data);
@@ -132,7 +132,7 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://192.168.1.87:5000/api/recipes", {
+      const response = await fetch("http://192.168.1.125:5000/api/recipes", {
         method: "POST",
         headers: {
           "Content-Type": "application/json",
@@ -172,7 +172,7 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen bg-black text-white">
+    <div className="min-h-screen bg-white">
       <Header />
 
       {/* Search Bar */}
@@ -183,29 +183,8 @@ export default function Home() {
         tags={tags}
         selectedTag={selectedTag}
         onTagSelect={setSelectedTag}
+        onAddRecipe={handleOpenModal} // Pass the function to open the modal
       />
-
-      {/* Recipes Section */}
-      <main className="px-20 py-4"> {/* Added horizontal padding (px-8) */}
-        <div className="grid gap-6 justify-center grid-cols-[repeat(auto-fill,minmax(400px,1fr))]">
-          {filteredRecipes.map((recipe) => (
-            <RecipeCard
-              key={recipe.id}
-              recipe={recipe}
-              onClick={() => handleOpenRecipeModal(recipe)}
-            />
-          ))}
-        </div>
-      </main>
-
-      {/* Floating Add Recipe Button */}
-      <button
-        className="fixed bottom-8 right-8 rounded-full bg-blue-500 text-white text-3xl w-16 h-16 flex items-center justify-center shadow-lg hover:bg-blue-600 transition"
-        aria-label="Add Recipe"
-        onClick={handleOpenModal}
-      >
-        +
-      </button>
 
       {/* AddRecipeModal */}
       {isModalOpen && (
@@ -221,6 +200,40 @@ export default function Home() {
       {isRecipeModalOpen && selectedRecipe && (
         <RecipeModal recipe={selectedRecipe} onClose={handleCloseRecipeModal} />
       )}
+
+      {/* Recipes Section */}
+      <main className="px-8 py-4">
+        <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
+          {filteredRecipes.map((recipe) => (
+            <RecipeCard
+              key={recipe.id}
+              recipe={recipe} // Pass the entire recipe object, including tags
+              onClick={() => handleOpenRecipeModal(recipe)}
+            />
+          ))}
+        </div>
+      </main>
+      {/* Back to Top Button */}
+      <button
+        onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
+        className="fixed bottom-8 right-8 bg-yellow-400 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-yellow-500 transition"
+        aria-label="Back to Top"
+      >
+        <svg
+          xmlns="http://www.w3.org/2000/svg"
+          fill="none"
+          viewBox="0 0 24 24"
+          strokeWidth={2}
+          stroke="currentColor"
+          className="w-6 h-6"
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M5 15l7-7 7 7"
+          />
+        </svg>
+      </button>
     </div>
   );
 }

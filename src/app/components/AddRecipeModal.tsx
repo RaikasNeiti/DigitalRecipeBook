@@ -32,7 +32,7 @@ export default function AddRecipeModal({
   useEffect(() => {
     const fetchTags = async () => {
       try {
-        const response = await fetch("http://192.168.1.87:5000/api/tags");
+        const response = await fetch("http://192.168.1.125:5000/api/tags");
         if (response.ok) {
           const data = await response.json();
           setAvailableTags(data);
@@ -89,7 +89,7 @@ export default function AddRecipeModal({
   };
 
   return (
-    <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
+    <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50">
       <div className="bg-white text-black rounded-lg p-8 w-[800px] max-w-full">
         <h2 className="text-2xl font-bold mb-4">Add Recipe</h2>
         {error && <p className="text-red-500 mb-4">{error}</p>}
