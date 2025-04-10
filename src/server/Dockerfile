@@ -2,16 +2,23 @@
 FROM node:23-slim
 
 # Set the working directory
-WORKDIR /app
+WORKDIR /recipe/
 
 # Copy package.json and package-lock.json
+<<<<<<< HEAD
+COPY package.json /recipe/
+COPY package-lock.json /recipe/
+COPY .env ../
+=======
 COPY ../../package*.json ./
+>>>>>>> main
 
 # Install dependencies
 RUN npm install
 
-# Copy the rest of the application code
-COPY . .
+# Copy the rest of the application code from the root/src/app folder
+COPY ./src/server /recipe/server
+WORKDIR /recipe/server
 
 # Expose the backend port
 EXPOSE 5000

@@ -3,8 +3,8 @@ version: "3.8"
 services:
   backend:
     build:
-      context: ./src/server
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./src/server/Dockerfile
     ports:
       - "5000:5000"
     environment:
@@ -13,36 +13,37 @@ services:
       - DB_PASSWORD=${DB_PASSWORD}
       - DB_NAME=${DB_NAME}
     volumes:
-      - ./src/server:/app
+      - ./src/server:/recipe/server
     depends_on:
       - db
 
   frontend:
     build:
-      context: ./src/app
-      dockerfile: Dockerfile
+      context: .
+      dockerfile: ./src/app/Dockerfile
     ports:
       - "3000:3000"
     volumes:
-      - ./src/app:/app # Bind mount the local frontend code
-      - /app/node_modules # Prevent overwriting node_modules in the container
+      - ./src/app:/recipe/app
+      - /app/node_modules
     stdin_open: true
     tty: true
-    command: ["npm", "run", "dev"] # Ensure the dev server is running for live updates
+    command: ["npm", "run", "dev"]
 
   db:
     image: mysql:8
     container_name: mysql
     restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
-      MYSQL_DATABASE: recipedb
-      MYSQL_USER: ${DB_USER}
+      MYSQL_ROOT_PASSWORD: ${DB_ROOT_PASSWORD}
+      MYSQL_DATABASE: ${DB_NAME}
       MYSQL_PASSWORD: ${DB_PASSWORD}
     ports:
       - "3306:3306"
     volumes:
       - db_data:/var/lib/mysql
+      - ./src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+
 
 volumes:
   db_data:
