@@ -5,13 +5,9 @@ FROM node:23-slim
 WORKDIR /recipe/
 
 # Copy package.json and package-lock.json
-<<<<<<< HEAD
 COPY package.json /recipe/
 COPY package-lock.json /recipe/
 COPY .env ../
-=======
-COPY ../../package*.json ./
->>>>>>> main
 
 # Install dependencies
 RUN npm install
