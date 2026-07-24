@@ -6,12 +6,15 @@ import RecipeModal from "./components/RecipeModal";
 import AddRecipeModal from "./components/AddRecipeModal";
 import SearchBar from "./components/SearchBar"; // Import the SearchBar component
 import TagNavbar from "./components/TagNavbar"; // Import the TagNavbar component
+import ConfirmDialog from "./components/ConfirmDialog";
 
 const API_BASE = "http://192.168.1.125:5000";
 
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
+  const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
+  const [showAddSuccess, setShowAddSuccess] = useState(false);
   const [searchQuery, setSearchQuery] = useState(""); // State for search query
   const [selectedTag, setSelectedTag] = useState<string | null>(null); // State for selected tag
   const [tags, setTags] = useState<string[]>([]); // State for tags
@@ -143,8 +146,7 @@ export default function Home() {
     }));
   };
 
-  const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
+  const handleSubmit = async () => {
     try {
       const body = new FormData();
       body.append("name", formData.name);
@@ -163,7 +165,6 @@ export default function Home() {
       });
 
       if (response.ok) {
-        alert("Recipe added successfully!");
         setFormData({
           name: "",
           instructions: "",
@@ -175,12 +176,32 @@ export default function Home() {
         });
         handleCloseModal();
         fetchRecipes(); // Refresh recipes after adding a new one
+        setShowAddSuccess(true);
       } else {
         alert("Failed to add recipe.");
       }
     } catch (error) {
       console.error("Error adding recipe:", error);
       alert("An error occurred while adding the recipe.");
+    }
+  };
+
+  const handleDeleteRecipe = async (id: number) => {
+    try {
+      const response = await fetch(`${API_BASE}/api/recipes/${id}`, {
+        method: "DELETE",
+      });
+
+      if (response.ok) {
+        setConfirmDeleteId(null);
+        handleCloseRecipeModal();
+        fetchRecipes();
+      } else {
+        alert("Failed to delete recipe.");
+      }
+    } catch (error) {
+      console.error("Error deleting recipe:", error);
+      alert("An error occurred while deleting the recipe.");
     }
   };
 
@@ -192,7 +213,7 @@ export default function Home() {
   });
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className="min-h-screen bg-slate-50">
       <Header />
 
       {/* Search Bar */}
@@ -219,25 +240,56 @@ export default function Home() {
         />
       )}
       {isRecipeModalOpen && selectedRecipe && (
-        <RecipeModal recipe={selectedRecipe} onClose={handleCloseRecipeModal} />
+        <RecipeModal
+          recipe={selectedRecipe}
+          onClose={handleCloseRecipeModal}
+          onDelete={() => setConfirmDeleteId(selectedRecipe.id)}
+        />
+      )}
+      {confirmDeleteId !== null && (
+        <ConfirmDialog
+          title="Delete this recipe?"
+          message="This action cannot be undone."
+          confirmLabel="Delete"
+          tone="danger"
+          onCancel={() => setConfirmDeleteId(null)}
+          onConfirm={() => handleDeleteRecipe(confirmDeleteId)}
+        />
+      )}
+      {showAddSuccess && (
+        <ConfirmDialog
+          title="Recipe added"
+          message="Your recipe was successfully added to the book."
+          confirmLabel="OK"
+          onConfirm={() => setShowAddSuccess(false)}
+        />
       )}
 
       {/* Recipes Section */}
-      <main className="px-8 py-4">
-        <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
-          {filteredRecipes.map((recipe) => (
-            <RecipeCard
-              key={recipe.id}
-              recipe={recipe} // Pass the entire recipe object, including tags
-              onClick={() => handleOpenRecipeModal(recipe)}
-            />
-          ))}
-        </div>
+      <main className="mx-auto max-w-6xl px-6 py-6">
+        {filteredRecipes.length > 0 ? (
+          <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
+            {filteredRecipes.map((recipe) => (
+              <RecipeCard
+                key={recipe.id}
+                recipe={recipe} // Pass the entire recipe object, including tags
+                onClick={() => handleOpenRecipeModal(recipe)}
+              />
+            ))}
+          </div>
+        ) : (
+          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-20 text-center">
+            <p className="text-lg font-medium text-slate-900">No recipes found</p>
+            <p className="mt-1 text-sm text-slate-500">
+              Try a different search or tag, or add a new recipe.
+            </p>
+          </div>
+        )}
       </main>
       {/* Back to Top Button */}
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        className="fixed bottom-8 right-8 bg-yellow-400 text-white w-12 h-12 rounded-full flex items-center justify-center shadow-lg hover:bg-yellow-500 transition"
+        className="fixed bottom-8 right-8 flex h-12 w-12 items-center justify-center rounded-full bg-amber-400 text-white shadow-lg transition hover:bg-amber-500"
         aria-label="Back to Top"
       >
         <svg

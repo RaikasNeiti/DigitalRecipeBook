@@ -5,24 +5,23 @@ interface SearchBarProps {
 
 export default function SearchBar({ searchQuery, onSearchChange }: SearchBarProps) {
   return (
-    <div className="py-4 px-8 flex justify-center">
-        <div className="relative w-[50%]">
-          <span className="absolute inset-y-0 left-3 flex items-center">
-            <img
-              src="/search-icon.svg"
-              alt="Search Icon"
-              className="w-5 h-5 text-gray-500"
-            />
-          </span>
-          <input
-            type="text"
-            placeholder="Search any recipe"
-            value={searchQuery}
-            onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full p-2 pl-10 rounded-full bg-gray-200 placeholder-gray-600"
+    <div className="mx-auto w-full max-w-6xl px-6 pt-6">
+      <div className="relative">
+        <span className="pointer-events-none absolute inset-y-0 left-4 flex items-center">
+          <img
+            src="/search-icon.svg"
+            alt=""
+            className="h-4 w-4 opacity-40"
           />
-        </div>
+        </span>
+        <input
+          type="text"
+          placeholder="Search any recipe"
+          value={searchQuery}
+          onChange={(e) => onSearchChange(e.target.value)}
+          className="w-full rounded-full border border-slate-200 bg-white py-2.5 pl-11 pr-4 text-sm text-slate-900 placeholder-slate-400 shadow-sm outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100"
+        />
+      </div>
     </div>
   );
 }
-

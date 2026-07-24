@@ -265,6 +265,38 @@ app.get("/api/recipes-with-ingredients", async (req, res) => {
   }
 });
 
+app.delete("/api/recipes/:id", async (req, res) => {
+  const { id } = req.params;
+
+  try {
+    const [recipe] = await sqlquery(
+      "SELECT servings_id, image_path FROM recipes WHERE id = $1",
+      [id]
+    );
+
+    if (!recipe) {
+      return res.status(404).send({ error: "Recipe not found." });
+    }
+
+    await sqlquery("DELETE FROM recipe_ingredients WHERE recipe_id = $1", [id]);
+    await sqlquery("DELETE FROM recipe_tags WHERE recipe_id = $1", [id]);
+    await sqlquery("DELETE FROM recipes WHERE id = $1", [id]);
+
+    if (recipe.servings_id) {
+      await sqlquery("DELETE FROM servings WHERE id = $1", [recipe.servings_id]);
+    }
+
+    if (recipe.image_path) {
+      fs.unlink(path.join(uploadsDir, path.basename(recipe.image_path)), () => {});
+    }
+
+    res.status(200).send({ message: "Recipe deleted successfully!" });
+  } catch (error) {
+    console.error("Error deleting recipe:", error);
+    res.status(500).send({ error: "Failed to delete recipe." });
+  }
+});
+
 app.get("/api/tags", async (req, res) => {
   try {
     const tags = await sqlquery("SELECT name FROM tags ORDER BY name");

@@ -1,24 +1,37 @@
 export default function Header() {
-    return (
-      <div className="p-4">
-        <header
-          className="bg-yellow-400 rounded-full text-black px-12 py-4 flex items-center"
-          style={{ height: "64px" }}
-        >
-          <div className="flex items-center space-x-16">
-            {/* Logo */}
+  return (
+    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur-md">
+      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
+        <div className="flex items-center gap-3">
+          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-400">
             <img
               src="/cutlery-icon.svg"
-              alt="Digital Recipe Book Logo"
-              className="w-14 h-14 filter invert"
+              alt=""
+              className="h-5 w-5 invert"
             />
-            <nav className="flex space-x-8">
-              <a href="#" className="text-lg font-bold text-white">Home</a>
-              <a href="#" className="text-lg text-white/70 hover:text-white/90">Recipe Roulette</a>
-              <a href="#" className="text-lg text-white/70 hover:text-white/90">Shopping List</a>
-            </nav>
-          </div>
-        </header>
+          </span>
+          <span className="text-lg font-semibold tracking-tight text-slate-900">
+            Digital Recipe Book
+          </span>
+        </div>
+        <nav className="hidden items-center gap-8 sm:flex">
+          <a href="#" className="text-sm font-medium text-slate-900">
+            Home
+          </a>
+          <a
+            href="#"
+            className="text-sm font-medium text-slate-500 transition hover:text-slate-900"
+          >
+            Recipe Roulette
+          </a>
+          <a
+            href="#"
+            className="text-sm font-medium text-slate-500 transition hover:text-slate-900"
+          >
+            Shopping List
+          </a>
+        </nav>
       </div>
-    );
-  }
+    </header>
+  );
+}

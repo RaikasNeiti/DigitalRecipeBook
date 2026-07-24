@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from "react";
+import ConfirmDialog from "./ConfirmDialog";
 
 interface AddRecipeModalProps {
   formData: {
@@ -15,8 +16,12 @@ interface AddRecipeModalProps {
   onAddIngredient: () => void;
   onRemoveIngredient: (index: number) => void; // New prop for removing an ingredient
   onClose: () => void;
-  onSubmit: (e: React.FormEvent) => void;
+  onSubmit: () => void;
 }
+
+const inputClass =
+  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100";
+const labelClass = "mb-1.5 block text-sm font-medium text-slate-700";
 
 export default function AddRecipeModal({
   formData,
@@ -31,6 +36,7 @@ export default function AddRecipeModal({
   const [selectedTags, setSelectedTags] = useState<string[]>(formData.tags);
   const [error, setError] = useState<string | null>(null); // State for validation errors
   const [imagePreview, setImagePreview] = useState<string | null>(null);
+  const [showAddConfirm, setShowAddConfirm] = useState(false);
 
   useEffect(() => {
     if (!formData.image) {
@@ -88,35 +94,47 @@ export default function AddRecipeModal({
       return;
     }
     setError(null);
-    onSubmit(e);
-    formData.tags = selectedTags;
+    setShowAddConfirm(true);
   };
 
-  const removeIngredientField = (index: number) => {
-    const updatedIngredients = formData.ingredients.filter((_, i) => i !== index);
-    onChange({
-      target: {
-        name: "ingredients",
-        value: updatedIngredients,
-      },
-    } as unknown as React.ChangeEvent<HTMLInputElement>);
+  const confirmAdd = () => {
+    setShowAddConfirm(false);
+    formData.tags = selectedTags;
+    onSubmit();
   };
 
   return (
-    <div className="fixed inset-0 bg-white bg-opacity-50 flex items-center justify-center z-50">
-      <div className="bg-white text-black rounded-lg p-8 w-[800px] max-w-full">
-        <h2 className="text-2xl font-bold mb-4">Add Recipe</h2>
-        {error && <p className="text-red-500 mb-4">{error}</p>}
-        <form onSubmit={handleSubmit}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
+      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
+        {/* Header */}
+        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
+          <h2 className="text-xl font-semibold text-slate-900">Add Recipe</h2>
+          <button
+            type="button"
+            onClick={onClose}
+            aria-label="Close"
+            className="rounded-full p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
+              <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+            </svg>
+          </button>
+        </div>
+
+        <form id="add-recipe-form" onSubmit={handleSubmit} className="overflow-y-auto px-6 py-5">
+          {error && (
+            <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+          )}
+
           {/* Recipe Name */}
-          <div className="mb-4">
-            <label className="block font-medium mb-1" htmlFor="name">
+          <div className="mb-5">
+            <label className={labelClass} htmlFor="name">
               Recipe Name
             </label>
             <input
               type="text"
               id="name"
-              className="w-full border rounded p-2"
+              className={inputClass}
               placeholder="Enter recipe name"
               value={formData.name}
               onChange={onChange}
@@ -124,34 +142,35 @@ export default function AddRecipeModal({
           </div>
 
           {/* Image */}
-          <div className="mb-4">
-            <label className="block font-medium mb-1" htmlFor="image">
-              Recipe Image
+          <div className="mb-5">
+            <label className={labelClass}>Recipe Image</label>
+            <label
+              htmlFor="image"
+              className="flex h-40 w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 transition hover:border-amber-300"
+            >
+              {imagePreview ? (
+                <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
+              ) : (
+                <span className="text-sm text-slate-400">Click to upload an image</span>
+              )}
             </label>
             <input
               type="file"
               id="image"
               accept="image/*"
-              className="w-full border rounded p-2"
+              className="hidden"
               onChange={(e) => onImageChange(e.target.files?.[0] ?? null)}
             />
-            {imagePreview && (
-              <img
-                src={imagePreview}
-                alt="Preview"
-                className="mt-2 h-32 w-32 object-cover rounded"
-              />
-            )}
           </div>
 
           {/* Instructions */}
-          <div className="mb-4">
-            <label className="block font-medium mb-1" htmlFor="instructions">
+          <div className="mb-5">
+            <label className={labelClass} htmlFor="instructions">
               Instructions
             </label>
             <textarea
               id="instructions"
-              className="w-full border rounded p-2 h-32"
+              className={`${inputClass} h-32 resize-none`}
               placeholder="Enter instructions"
               value={formData.instructions}
               onChange={onChange}
@@ -159,14 +178,14 @@ export default function AddRecipeModal({
           </div>
 
           {/* Cooking Time */}
-          <div className="mb-4">
-            <label className="block font-medium mb-1" htmlFor="cookingtime">
+          <div className="mb-5">
+            <label className={labelClass} htmlFor="cookingtime">
               Cooking Time (minutes)
             </label>
             <input
               type="number"
               id="cookingtime"
-              className="w-full border rounded p-2"
+              className={inputClass}
               placeholder="Enter cooking time"
               value={formData.cookingtime}
               onChange={onChange}
@@ -174,20 +193,20 @@ export default function AddRecipeModal({
           </div>
 
           {/* Servings */}
-          <div className="mb-4">
-            <label className="block font-medium mb-1">Servings</label>
+          <div className="mb-5">
+            <label className={labelClass}>Servings</label>
             <div className="flex gap-2">
               <input
                 type="number"
                 id="servings.amount"
-                className="w-1/2 border rounded p-2"
+                className={inputClass}
                 placeholder="Amount"
                 value={formData.servings.amount}
                 onChange={onChange}
               />
               <select
                 id="servings.unit"
-                className="w-1/2 border rounded p-2"
+                className={inputClass}
                 value={formData.servings.unit}
                 onChange={onChange}
               >
@@ -199,101 +218,119 @@ export default function AddRecipeModal({
           </div>
 
           {/* Ingredients */}
-          <div className="mb-4">
-            <label className="block font-medium mb-1">Ingredients</label>
-            {formData.ingredients.map((ingredient, index) => (
-              <div key={index} className="flex gap-2 mb-2">
-                <input
-                  type="text"
-                  name="name"
-                  className="w-1/3 border rounded p-2"
-                  placeholder="Ingredient name"
-                  value={ingredient.name}
-                  onChange={(e) => onChange(e, index)}
-                />
-                <input
-                  type="number"
-                  name="quantity"
-                  className="w-1/3 border rounded p-2"
-                  placeholder="Quantity"
-                  value={ingredient.quantity}
-                  onChange={(e) => onChange(e, index)}
-                />
-                <select
-                  name="unit"
-                  className="w-1/3 border rounded p-2"
-                  value={ingredient.unit}
-                  onChange={(e) => onChange(e, index)}
-                >
-                  <option value="">Select Unit</option>
-                  <option value="Tablespoon">Tablespoon</option>
-                  <option value="Teaspoon">Teaspoon</option>
-                  <option value="Pieces">Pieces</option>
-                  <option value="g">g</option>
-                  <option value="kg">kg</option>
-                  <option value="ml">ml</                  option>
-                  <option value="dl">dl</option>
-                  <option value="L">L</option>
-                  <option value="Cup">Cup</option>
-                  <option value="oz">oz</option>
-                </select>
-                <button
-                  type="button"
-                  className="bg-red-500 text-white px-2 py-1 rounded hover:bg-red-600"
-                  onClick={() => onRemoveIngredient(index)}
-                >
-                  Remove
-                </button>
-              </div>
-            ))}
+          <div className="mb-5">
+            <label className={labelClass}>Ingredients</label>
+            <div className="space-y-2">
+              {formData.ingredients.map((ingredient, index) => (
+                <div key={index} className="flex items-center gap-2 rounded-lg bg-slate-50 p-2">
+                  <input
+                    type="text"
+                    name="name"
+                    className={`${inputClass} w-2/5`}
+                    placeholder="Ingredient name"
+                    value={ingredient.name}
+                    onChange={(e) => onChange(e, index)}
+                  />
+                  <input
+                    type="number"
+                    name="quantity"
+                    className={`${inputClass} w-1/5`}
+                    placeholder="Qty"
+                    value={ingredient.quantity}
+                    onChange={(e) => onChange(e, index)}
+                  />
+                  <select
+                    name="unit"
+                    className={`${inputClass} w-1/4`}
+                    value={ingredient.unit}
+                    onChange={(e) => onChange(e, index)}
+                  >
+                    <option value="">Unit</option>
+                    <option value="Tablespoon">Tablespoon</option>
+                    <option value="Teaspoon">Teaspoon</option>
+                    <option value="Pieces">Pieces</option>
+                    <option value="g">g</option>
+                    <option value="kg">kg</option>
+                    <option value="ml">ml</option>
+                    <option value="dl">dl</option>
+                    <option value="L">L</option>
+                    <option value="Cup">Cup</option>
+                    <option value="oz">oz</option>
+                  </select>
+                  <button
+                    type="button"
+                    aria-label="Remove ingredient"
+                    className="shrink-0 rounded-full p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                    onClick={() => onRemoveIngredient(index)}
+                  >
+                    <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
+                      <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
+                    </svg>
+                  </button>
+                </div>
+              ))}
+            </div>
             <button
               type="button"
-              className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400"
+              className="mt-2 w-full rounded-lg border border-dashed border-slate-300 py-2 text-sm font-medium text-amber-600 transition hover:border-amber-300 hover:bg-amber-50"
               onClick={onAddIngredient}
             >
-              Add Ingredient
+              + Add Ingredient
             </button>
           </div>
 
           {/* Tags */}
-          <div className="mb-4">
-            <label className="block font-medium mb-1">Tags</label>
+          <div>
+            <label className={labelClass}>Tags</label>
             <div className="flex flex-wrap gap-2">
-              {availableTags.map((tag) => (
-                <button
-                  key={tag}
-                  type="button"
-                  className={`px-4 py-2 rounded-full border ${
-                    selectedTags.includes(tag)
-                      ? "bg-gray-500 text-white"
-                      : "bg-gray-200 text-black"
-                  }`}
-                  onClick={() => toggleTag(tag)}
-                >
-                  {tag}
-                </button>
-              ))}
+              {availableTags.map((tag) => {
+                const isSelected = selectedTags.includes(tag);
+                return (
+                  <button
+                    key={tag}
+                    type="button"
+                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                      isSelected
+                        ? "bg-amber-400 text-white"
+                        : "border border-slate-200 bg-white text-slate-600 hover:border-amber-300"
+                    }`}
+                    onClick={() => toggleTag(tag)}
+                  >
+                    {tag}
+                  </button>
+                );
+              })}
             </div>
           </div>
-
-          {/* Buttons */}
-          <div className="flex justify-end gap-4">
-            <button
-              type="button"
-              className="bg-gray-300 text-black px-4 py-2 rounded hover:bg-gray-400"
-              onClick={onClose}
-            >
-              Cancel
-            </button>
-            <button
-              type="submit"
-              className="bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600"
-            >
-              Save
-            </button>
-          </div>
         </form>
+
+        {/* Footer */}
+        <div className="flex justify-end gap-3 border-t border-slate-100 px-6 py-4">
+          <button
+            type="button"
+            className="rounded-full px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+            onClick={onClose}
+          >
+            Cancel
+          </button>
+          <button
+            type="submit"
+            form="add-recipe-form"
+            className="rounded-full bg-amber-400 px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-amber-500"
+          >
+            Save Recipe
+          </button>
+        </div>
       </div>
+      {showAddConfirm && (
+        <ConfirmDialog
+          title="Add this recipe?"
+          message={`Add "${formData.name}" to your recipe book?`}
+          confirmLabel="Add Recipe"
+          onCancel={() => setShowAddConfirm(false)}
+          onConfirm={confirmAdd}
+        />
+      )}
     </div>
   );
 }
