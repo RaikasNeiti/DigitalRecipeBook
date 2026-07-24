@@ -1,14 +1,18 @@
 import { useState } from "react";
 
-const navLinks = [
-  { label: "Home", href: "#" },
-  { label: "Recipe Roulette", href: "#" },
-  { label: "Shopping List", href: "#" },
-  { label: "Calendar", href: "#" },
-];
+interface HeaderProps {
+  onRouletteClick: () => void;
+}
 
-export default function Header() {
+export default function Header({ onRouletteClick }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
+
+  const navLinks = [
+    { label: "Home", href: "#" },
+    { label: "Recipe Roulette", onClick: onRouletteClick },
+    { label: "Shopping List", href: "#" },
+    { label: "Calendar", href: "#" },
+  ];
 
   return (
     <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur-md">
@@ -24,17 +28,28 @@ export default function Header() {
 
         {/* Desktop nav */}
         <nav className="hidden items-center gap-8 sm:flex">
-          {navLinks.map((link, index) => (
-            <a
-              key={link.label}
-              href={link.href}
-              className={`text-sm font-medium transition ${
-                index === 0 ? "text-slate-900" : "text-slate-500 hover:text-slate-900"
-              }`}
-            >
-              {link.label}
-            </a>
-          ))}
+          {navLinks.map((link, index) =>
+            link.onClick ? (
+              <button
+                key={link.label}
+                type="button"
+                onClick={link.onClick}
+                className="text-sm font-medium text-slate-500 transition hover:text-slate-900"
+              >
+                {link.label}
+              </button>
+            ) : (
+              <a
+                key={link.label}
+                href={link.href}
+                className={`text-sm font-medium transition ${
+                  index === 0 ? "text-slate-900" : "text-slate-500 hover:text-slate-900"
+                }`}
+              >
+                {link.label}
+              </a>
+            )
+          )}
         </nav>
 
         {/* Mobile burger button */}
@@ -58,20 +73,34 @@ export default function Header() {
       {/* Mobile menu panel */}
       {isMenuOpen && (
         <nav className="flex flex-col gap-1 border-t border-slate-200 bg-white px-6 py-3 sm:hidden">
-          {navLinks.map((link, index) => (
-            <a
-              key={link.label}
-              href={link.href}
-              onClick={() => setIsMenuOpen(false)}
-              className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
-                index === 0
-                  ? "bg-amber-50 text-slate-900"
-                  : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
-              }`}
-            >
-              {link.label}
-            </a>
-          ))}
+          {navLinks.map((link, index) =>
+            link.onClick ? (
+              <button
+                key={link.label}
+                type="button"
+                onClick={() => {
+                  setIsMenuOpen(false);
+                  link.onClick?.();
+                }}
+                className="rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+              >
+                {link.label}
+              </button>
+            ) : (
+              <a
+                key={link.label}
+                href={link.href}
+                onClick={() => setIsMenuOpen(false)}
+                className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                  index === 0
+                    ? "bg-amber-50 text-slate-900"
+                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                }`}
+              >
+                {link.label}
+              </a>
+            )
+          )}
         </nav>
       )}
     </header>

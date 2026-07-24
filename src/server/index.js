@@ -143,82 +143,133 @@ app.post("/api/recipes", upload.single("image"), async (req, res) => {
 
 app.put("/api/recipes", upload.single("image"), async (req, res) => {
   const { id, name, instructions, cookingtime } = req.body;
-  const servings = JSON.parse(req.body.servings);
-  const ingredients = JSON.parse(req.body.ingredients);
-  const tags = JSON.parse(req.body.tags);
+
+  let servings;
+  let ingredients;
+  let tags;
 
   try {
-    // Update servings
-    await sqlquery(
-      "UPDATE servings SET amount = $1, unit = $2 WHERE id = (SELECT servings_id FROM recipes WHERE id = $3)",
-      [servings.amount, servings.unit, id]
+    servings = JSON.parse(req.body.servings || "{}");
+    ingredients = JSON.parse(req.body.ingredients || "[]");
+    tags = JSON.parse(req.body.tags || "[]");
+  } catch (parseError) {
+    return res.status(400).send({ error: "Invalid JSON payload for servings, ingredients, or tags." });
+  }
+
+  if (!id || !name || !instructions || !cookingtime) {
+    return res.status(400).send({ error: "Missing required fields for recipe update." });
+  }
+
+  const client = await pool.connect();
+  let oldImagePath = null;
+
+  try {
+    await client.query("BEGIN");
+
+    const recipeResult = await client.query(
+      "SELECT id, servings_id, image_path FROM recipes WHERE id = $1",
+      [id]
     );
 
-    // Update recipe (only replace the image if a new one was uploaded)
+    if (recipeResult.rows.length === 0) {
+      await client.query("ROLLBACK");
+      return res.status(404).send({ error: "Recipe not found." });
+    }
+
+    const recipeRow = recipeResult.rows[0];
+    oldImagePath = recipeRow.image_path;
+
+    if (recipeRow.servings_id) {
+      await client.query(
+        "UPDATE servings SET amount = $1, unit = $2 WHERE id = $3",
+        [servings.amount, servings.unit, recipeRow.servings_id]
+      );
+    }
+
     if (req.file) {
       const imagePath = `/uploads/${req.file.filename}`;
-      await sqlquery(
+      await client.query(
         "UPDATE recipes SET name = $1, instructions = $2, cookingtime = $3, image_path = $4 WHERE id = $5",
         [name, instructions, cookingtime, imagePath, id]
       );
     } else {
-      await sqlquery(
+      await client.query(
         "UPDATE recipes SET name = $1, instructions = $2, cookingtime = $3 WHERE id = $4",
         [name, instructions, cookingtime, id]
       );
     }
 
-    // Update ingredients
-    await sqlquery("DELETE FROM recipe_ingredients WHERE recipe_id = $1", [id]);
+    await client.query("DELETE FROM recipe_ingredients WHERE recipe_id = $1", [id]);
     for (const ingredient of ingredients) {
-      const [ingredientRow] = await sqlquery(
+      const ingredientName = ingredient.name?.trim();
+      const ingredientQuantity = ingredient.quantity?.toString().trim();
+      const ingredientUnit = ingredient.unit?.trim();
+
+      if (!ingredientName || !ingredientQuantity || !ingredientUnit) {
+        continue;
+      }
+
+      const ingredientResult = await client.query(
         "SELECT id FROM ingredients WHERE name = $1",
-        [ingredient.name]
+        [ingredientName]
       );
 
       let ingredientId;
-      if (ingredientRow) {
-        ingredientId = ingredientRow.id;
+      if (ingredientResult.rows.length > 0) {
+        ingredientId = ingredientResult.rows[0].id;
       } else {
-        const [insertedIngredient] = await sqlquery(
+        const insertedIngredient = await client.query(
           "INSERT INTO ingredients (name) VALUES ($1) RETURNING id",
-          [ingredient.name]
+          [ingredientName]
         );
-        ingredientId = insertedIngredient.id;
+        ingredientId = insertedIngredient.rows[0].id;
       }
 
-      await sqlquery(
+      await client.query(
         "INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity, unit) VALUES ($1, $2, $3, $4)",
-        [id, ingredientId, ingredient.quantity, ingredient.unit]
+        [id, ingredientId, ingredientQuantity, ingredientUnit]
       );
     }
 
-    // Update tags
-    await sqlquery("DELETE FROM recipe_tags WHERE recipe_id = $1", [id]);
-    for (const tag of tags) {
-      const [tagRow] = await sqlquery("SELECT id FROM tags WHERE name = $1", [tag]);
-
-      let tagId;
-      if (tagRow) {
-        tagId = tagRow.id;
-      } else {
-        const [insertedTag] = await sqlquery(
-          "INSERT INTO tags (name) VALUES ($1) RETURNING id",
-          [tag]
-        );
-        tagId = insertedTag.id;
+    await client.query("DELETE FROM recipe_tags WHERE recipe_id = $1", [id]);
+    for (const rawTag of tags) {
+      const tagName = (rawTag || "").trim();
+      if (!tagName) {
+        continue;
       }
 
-      await sqlquery(
+      const tagResult = await client.query("SELECT id FROM tags WHERE name = $1", [tagName]);
+
+      let tagId;
+      if (tagResult.rows.length > 0) {
+        tagId = tagResult.rows[0].id;
+      } else {
+        const insertedTag = await client.query(
+          "INSERT INTO tags (name) VALUES ($1) RETURNING id",
+          [tagName]
+        );
+        tagId = insertedTag.rows[0].id;
+      }
+
+      await client.query(
         "INSERT INTO recipe_tags (recipe_id, tag_id) VALUES ($1, $2)",
         [id, tagId]
       );
     }
 
+    await client.query("COMMIT");
+
+    if (req.file && oldImagePath) {
+      fs.unlink(path.join(uploadsDir, path.basename(oldImagePath)), () => {});
+    }
+
     res.status(200).send({ message: "Recipe updated successfully!" });
   } catch (error) {
+    await client.query("ROLLBACK");
     console.error("Error updating recipe:", error);
     res.status(500).send({ error: "Failed to update recipe." });
+  } finally {
+    client.release();
   }
 });
 

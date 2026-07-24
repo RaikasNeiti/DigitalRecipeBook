@@ -210,9 +210,8 @@ export default function AddRecipeModal({
                 value={formData.servings.unit}
                 onChange={onChange}
               >
-                <option value="">Select Unit</option>
-                <option value="people">People</option>
                 <option value="servings">Servings</option>
+                <option value="people">People</option>
               </select>
             </div>
           </div>
