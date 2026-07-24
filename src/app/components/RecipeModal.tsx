@@ -11,6 +11,11 @@ interface RecipeModalProps {
   onDelete: () => void;
   onEdit: () => void;
 }
+const formatQuantity = (quantity: string) => {
+  const parsed = Number.parseFloat(quantity);
+  return Number.isNaN(parsed) ? quantity : parsed.toString();
+};
+
 export default function RecipeModal({ recipe, onClose, onDelete, onEdit }: RecipeModalProps) {
 
   return (
@@ -105,7 +110,7 @@ export default function RecipeModal({ recipe, onClose, onDelete, onEdit }: Recip
               <li key={index} className="flex justify-between text-sm text-slate-700">
                 <span>{ingredient.name}</span>
                 <span className="text-slate-500">
-                  {ingredient.quantity} {ingredient.unit}
+                  {formatQuantity(ingredient.quantity)} {ingredient.unit}
                 </span>
               </li>
             ))}

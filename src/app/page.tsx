@@ -38,7 +38,7 @@ export default function Home() {
     name: "",
     instructions: "",
     cookingtime: "",
-    servings: { amount: "", unit: "" }, // Add default structure for servings
+    servings: { amount: "", unit: "servings" }, // Add default structure for servings
     ingredients: [{ name: "", quantity: "", unit: "" }],
     tags: [] as string[], // Ensure tags is an array of strings
     image: null as File | null,
@@ -246,7 +246,7 @@ export default function Home() {
           name: "",
           instructions: "",
           cookingtime: "",
-          servings: { amount: "", unit: "" }, // Add default structure for servings
+          servings: { amount: "", unit: "servings" }, // Add default structure for servings
           ingredients: [{ name: "", quantity: "", unit: "" }],
           tags: [], // Ensure tags is an array
           image: null,
