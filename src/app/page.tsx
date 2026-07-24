@@ -6,7 +6,6 @@ import RecipeModal from "./components/RecipeModal";
 import AddRecipeModal from "./components/AddRecipeModal";
 import EditRecipeModal from "./components/EditRecipeModal";
 import SearchBar from "./components/SearchBar"; // Import the SearchBar component
-import TagNavbar from "./components/TagNavbar"; // Import the TagNavbar component
 import ConfirmDialog from "./components/ConfirmDialog";
 import AdvancedFiltersModal, { AdvancedFilters } from "./components/AdvancedFiltersModal";
 import RecipeRouletteModal from "./components/RecipeRouletteModal";
@@ -28,10 +27,9 @@ export default function Home() {
   const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [confirmDeleteId, setConfirmDeleteId] = useState<number | null>(null);
   const [showAddSuccess, setShowAddSuccess] = useState(false);
+  const [isRouletteModalOpen, setIsRouletteModalOpen] = useState(false);
   const [isAdvancedFilterModalOpen, setIsAdvancedFilterModalOpen] = useState(false);
-  const [isRouletteOpen, setIsRouletteOpen] = useState(false);
   const [searchQuery, setSearchQuery] = useState(""); // State for search query
-  const [selectedTag, setSelectedTag] = useState<string | null>(null); // State for selected tag
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>(defaultAdvancedFilters);
   const [tags, setTags] = useState<string[]>([]); // State for tags
   const [formData, setFormData] = useState({
@@ -388,7 +386,6 @@ export default function Home() {
   // Filter recipes based on the search query and selected tag
   const filteredRecipes = recipes.filter((recipe) => {
     const matchesSearch = recipe.name.toLowerCase().includes(searchQuery.toLowerCase());
-    const matchesTag = selectedTag ? recipe.tags?.includes(selectedTag) : true;
 
     const cookingTime = Number.parseInt(recipe.cookingtime, 10);
     const minCookingTime = Number.parseInt(advancedFilters.minCookingTime, 10);
@@ -416,7 +413,6 @@ export default function Home() {
 
     return (
       matchesSearch &&
-      matchesTag &&
       matchesMinCookingTime &&
       matchesMaxCookingTime &&
       matchesIngredients &&
@@ -424,9 +420,46 @@ export default function Home() {
     );
   });
 
+  const foodTags = new Set(["appetizers", "dinner", "lunch"]);
+  const foodRecipeCount = recipes.filter((recipe) =>
+    (recipe.tags ?? []).some((tag) => foodTags.has(tag.trim().toLowerCase()))
+  ).length;
+
+  const dessertRecipeCount = recipes.filter((recipe) =>
+    (recipe.tags ?? []).some((tag) => tag.trim().toLowerCase() === "dessert")
+  ).length;
+
   return (
-    <div className="min-h-screen bg-slate-50">
-      <Header onRouletteClick={() => setIsRouletteOpen(true)} />
+    <div className="app-shell min-h-screen">
+      <Header onRouletteClick={() => setIsRouletteModalOpen(true)} />
+
+      <section className="mx-auto mt-5 max-w-6xl px-5 sm:px-6">
+        <div className="glass-panel rounded-3xl border border-white/70 p-5">
+          <p className="text-[11px] font-semibold uppercase tracking-[0.2em] text-slate-500">
+            Digital Cookbook
+          </p>
+          <h1 className="mt-2 text-2xl font-bold tracking-tight text-slate-900 sm:text-3xl">
+            Cook smarter with recipes that match your mood.
+          </h1>
+          <p className="mt-2 max-w-xl text-sm text-slate-600">
+            Browse, filter, and save what you love. Fast to scan, easy to choose.
+          </p>
+          <div className="mt-5 grid grid-cols-3 gap-2 sm:gap-3">
+            <div className="rounded-2xl border border-white/80 bg-white/75 px-3 py-2.5 backdrop-blur">
+              <p className="text-[11px] uppercase tracking-wide text-slate-500">Recipes</p>
+              <p className="mt-1 text-xl font-bold text-slate-900">{recipes.length}</p>
+            </div>
+            <div className="rounded-2xl border border-white/80 bg-white/75 px-3 py-2.5 backdrop-blur">
+              <p className="text-[11px] uppercase tracking-wide text-slate-500">Food</p>
+              <p className="mt-1 text-xl font-bold text-slate-900">{foodRecipeCount}</p>
+            </div>
+            <div className="rounded-2xl border border-sky-200/80 bg-sky-100/60 px-3 py-2.5 backdrop-blur">
+              <p className="text-[11px] uppercase tracking-wide text-slate-600">Dessert</p>
+              <p className="mt-1 text-xl font-bold text-slate-900">{dessertRecipeCount}</p>
+            </div>
+          </div>
+        </div>
+      </section>
 
       {/* Search Bar */}
       <SearchBar
@@ -447,13 +480,6 @@ export default function Home() {
         onReset={() => setAdvancedFilters(defaultAdvancedFilters)}
       />
 
-      {/* Navbar for Tags */}
-      <TagNavbar
-        tags={tags}
-        selectedTag={selectedTag}
-        onTagSelect={setSelectedTag}
-      />
-
       {/* AddRecipeModal */}
       {isModalOpen && (
         <AddRecipeModal
@@ -462,6 +488,7 @@ export default function Home() {
           onImageChange={handleImageChange}
           onAddIngredient={addIngredientField}
           onRemoveIngredient={removeIngredientField} // Pass the remove function
+          availableTags={tags}
           onClose={handleCloseModal}
           onSubmit={handleSubmit}
         />
@@ -487,17 +514,6 @@ export default function Home() {
           onSubmit={handleUpdateRecipe}
         />
       )}
-      {isRouletteOpen && (
-        <RecipeRouletteModal
-          recipes={recipes}
-          availableTags={tags}
-          onClose={() => setIsRouletteOpen(false)}
-          onViewRecipe={(recipe) => {
-            setIsRouletteOpen(false);
-            handleOpenRecipeModal(recipe);
-          }}
-        />
-      )}
       {confirmDeleteId !== null && (
         <ConfirmDialog
           title="Delete this recipe?"
@@ -516,11 +532,29 @@ export default function Home() {
           onConfirm={() => setShowAddSuccess(false)}
         />
       )}
+      {isRouletteModalOpen && (
+        <RecipeRouletteModal
+          recipes={recipes}
+          availableTags={tags}
+          onClose={() => setIsRouletteModalOpen(false)}
+          onViewRecipe={(recipe) => {
+            setIsRouletteModalOpen(false);
+            handleOpenRecipeModal(recipe);
+          }}
+        />
+      )}
 
       {/* Recipes Section */}
-      <main className="mx-auto max-w-6xl px-6 py-6">
+      <main className="mx-auto max-w-6xl px-5 py-6 sm:px-6">
+        <div className="mb-4 flex items-end justify-between">
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.18em] text-slate-500">Collection</p>
+            <h2 className="text-2xl font-bold tracking-tight text-slate-900">Popular Recipes</h2>
+          </div>
+          <p className="text-sm font-medium text-slate-500">{filteredRecipes.length} shown</p>
+        </div>
         {filteredRecipes.length > 0 ? (
-          <div className="grid gap-6 grid-cols-[repeat(auto-fill,minmax(250px,1fr))]">
+          <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
             {filteredRecipes.map((recipe) => (
               <RecipeCard
                 key={recipe.id}
@@ -530,18 +564,18 @@ export default function Home() {
             ))}
           </div>
         ) : (
-          <div className="flex flex-col items-center justify-center rounded-2xl border border-dashed border-slate-200 bg-white py-20 text-center">
-            <p className="text-lg font-medium text-slate-900">No recipes found</p>
-            <p className="mt-1 text-sm text-slate-500">
+          <div className="glass-panel flex flex-col items-center justify-center rounded-3xl border border-dashed border-slate-300/70 py-24 text-center">
+            <p className="text-lg font-bold text-slate-900">No recipes found</p>
+            <p className="mt-1 text-sm text-slate-600">
               Try a different search or tag, or add a new recipe.
             </p>
           </div>
         )}
       </main>
-      {/* Add Recipe Button */}
+
       <button
         onClick={handleOpenModal}
-        className="fixed bottom-24 right-8 z-40 flex h-12 w-12 items-center justify-center rounded-full bg-slate-900 text-white shadow-lg transition hover:bg-slate-700"
+        className="fixed bottom-24 right-6 z-40 flex h-14 w-14 items-center justify-center rounded-2xl border border-white/80 bg-white/90 text-slate-900 shadow-[0_12px_24px_rgba(30,64,175,0.2)] backdrop-blur transition hover:scale-[1.03] hover:bg-white sm:right-8"
         aria-label="Add Recipe"
         title="Add Recipe"
       >
@@ -557,10 +591,10 @@ export default function Home() {
           <path strokeLinecap="round" strokeLinejoin="round" d="M12 5v14m7-7H5" />
         </svg>
       </button>
-      {/* Back to Top Button */}
+
       <button
         onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}
-        className="fixed bottom-8 right-8 flex h-12 w-12 items-center justify-center rounded-full bg-amber-400 text-white shadow-lg transition hover:bg-amber-500"
+        className="fixed bottom-8 right-6 flex h-12 w-12 items-center justify-center rounded-2xl border border-sky-200/80 bg-white/90 text-slate-900 shadow-[0_10px_22px_rgba(59,130,246,0.2)] backdrop-blur transition hover:scale-[1.03] hover:bg-white sm:right-8"
         aria-label="Back to Top"
       >
         <svg

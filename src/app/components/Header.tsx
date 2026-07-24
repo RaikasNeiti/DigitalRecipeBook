@@ -1,40 +1,42 @@
 import { useState } from "react";
 
 interface HeaderProps {
-  onRouletteClick: () => void;
+  onRouletteClick?: () => void;
 }
 
 export default function Header({ onRouletteClick }: HeaderProps) {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
 
-  const navLinks = [
+  const navLinks: { label: string; href?: string; onClick?: () => void }[] = [
     { label: "Home", href: "#" },
-    { label: "Recipe Roulette", onClick: onRouletteClick },
+    ...(onRouletteClick ? [{ label: "Recipe Roulette", onClick: onRouletteClick }] : []),
     { label: "Shopping List", href: "#" },
     { label: "Calendar", href: "#" },
   ];
 
   return (
-    <header className="sticky top-0 z-40 border-b border-slate-200 bg-white/80 backdrop-blur-md">
-      <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-6">
-        <div className="flex items-center gap-3">
-          <span className="flex h-9 w-9 items-center justify-center rounded-full bg-amber-400">
-            <img src="/cutlery-icon.svg" alt="" className="h-5 w-5 invert" />
+    <header className="sticky top-0 z-40 border-b border-white/70 bg-white/55 backdrop-blur-xl">
+      <div className="mx-auto flex h-20 max-w-6xl items-center justify-between px-5 sm:px-6">
+        <div className="flex items-center gap-3.5">
+          <span className="flex h-10 w-10 items-center justify-center rounded-2xl bg-sky-100 shadow-[0_6px_18px_rgba(56,189,248,0.25)]">
+            <img src="/cutlery-icon.svg" alt="" className="h-5 w-5" />
           </span>
-          <span className="text-lg font-semibold tracking-tight text-slate-900">
-            Digital Recipe Book
-          </span>
+          <div>
+            <p className="text-[11px] font-semibold uppercase tracking-[0.22em] text-slate-500">
+              Kitchen Archive
+            </p>
+            <span className="text-lg font-bold tracking-tight text-slate-900">Digital Recipe Book</span>
+          </div>
         </div>
 
-        {/* Desktop nav */}
-        <nav className="hidden items-center gap-8 sm:flex">
+        <nav className="hidden items-center gap-2 rounded-full border border-white/80 bg-white/70 p-1.5 shadow-sm backdrop-blur sm:flex">
           {navLinks.map((link, index) =>
             link.onClick ? (
               <button
                 key={link.label}
                 type="button"
                 onClick={link.onClick}
-                className="text-sm font-medium text-slate-500 transition hover:text-slate-900"
+                className="rounded-full px-4 py-2 text-sm font-semibold text-slate-700 transition hover:bg-sky-100 hover:text-slate-900"
               >
                 {link.label}
               </button>
@@ -42,8 +44,10 @@ export default function Header({ onRouletteClick }: HeaderProps) {
               <a
                 key={link.label}
                 href={link.href}
-                className={`text-sm font-medium transition ${
-                  index === 0 ? "text-slate-900" : "text-slate-500 hover:text-slate-900"
+                className={`rounded-full px-4 py-2 text-sm font-medium transition ${
+                  index === 0
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-700 hover:bg-sky-100 hover:text-slate-900"
                 }`}
               >
                 {link.label}
@@ -52,13 +56,12 @@ export default function Header({ onRouletteClick }: HeaderProps) {
           )}
         </nav>
 
-        {/* Mobile burger button */}
         <button
           type="button"
           aria-label="Toggle menu"
           aria-expanded={isMenuOpen}
           onClick={() => setIsMenuOpen((prev) => !prev)}
-          className="flex h-9 w-9 items-center justify-center rounded-full text-slate-600 transition hover:bg-slate-100 sm:hidden"
+          className="flex h-10 w-10 items-center justify-center rounded-xl border border-white/80 bg-white/80 text-slate-700 transition hover:bg-sky-100 sm:hidden"
         >
           <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
             {isMenuOpen ? (
@@ -70,9 +73,8 @@ export default function Header({ onRouletteClick }: HeaderProps) {
         </button>
       </div>
 
-      {/* Mobile menu panel */}
       {isMenuOpen && (
-        <nav className="flex flex-col gap-1 border-t border-slate-200 bg-white px-6 py-3 sm:hidden">
+        <nav className="rise-in mx-5 mb-4 flex flex-col gap-1 rounded-2xl border border-white/80 bg-white/90 p-2 shadow-[0_12px_28px_rgba(30,64,175,0.15)] backdrop-blur sm:hidden">
           {navLinks.map((link, index) =>
             link.onClick ? (
               <button
@@ -82,7 +84,7 @@ export default function Header({ onRouletteClick }: HeaderProps) {
                   setIsMenuOpen(false);
                   link.onClick?.();
                 }}
-                className="rounded-lg px-3 py-2 text-left text-sm font-medium text-slate-600 transition hover:bg-slate-50 hover:text-slate-900"
+                className="rounded-xl px-3 py-2 text-left text-sm font-semibold text-slate-700 transition hover:bg-sky-100 hover:text-slate-900"
               >
                 {link.label}
               </button>
@@ -91,10 +93,10 @@ export default function Header({ onRouletteClick }: HeaderProps) {
                 key={link.label}
                 href={link.href}
                 onClick={() => setIsMenuOpen(false)}
-                className={`rounded-lg px-3 py-2 text-sm font-medium transition ${
+                className={`rounded-xl px-3 py-2 text-sm font-medium transition ${
                   index === 0
-                    ? "bg-amber-50 text-slate-900"
-                    : "text-slate-600 hover:bg-slate-50 hover:text-slate-900"
+                    ? "bg-slate-900 text-white"
+                    : "text-slate-700 hover:bg-sky-100 hover:text-slate-900"
                 }`}
               >
                 {link.label}
