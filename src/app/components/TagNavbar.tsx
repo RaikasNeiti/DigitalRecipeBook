@@ -18,7 +18,7 @@ const TagNavbar: React.FC<TagNavbarProps> = ({ tags, selectedTag, onTagSelect })
               className={`shrink-0 rounded-full px-4 py-2 text-sm font-semibold transition ${
                 isSelected
                   ? "bg-slate-900 text-white shadow-[0_8px_16px_rgba(15,23,42,0.22)]"
-                  : "border border-white/80 bg-white/80 text-slate-700 hover:border-sky-200 hover:bg-sky-50"
+                  : "border border-white/80 bg-white/80 text-slate-700 hover:border-[#417df6] hover:bg-[#417df6]/8"
               }`}
               onClick={() => onTagSelect(isSelected ? null : tag)}
             >

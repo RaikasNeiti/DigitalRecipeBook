@@ -17,7 +17,7 @@ interface AdvancedFiltersModalProps {
 }
 
 const inputClass =
-  "w-full rounded-2xl border border-[#d7e2f1] bg-white px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100";
+  "w-full rounded-2xl border border-[#d7e2f1] bg-white px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-[#417df6] focus:ring-2 focus:ring-[#417df6]/20";
 
 export default function AdvancedFiltersModal({
   isOpen,
@@ -63,7 +63,7 @@ export default function AdvancedFiltersModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-full p-1.5 text-slate-500 transition hover:bg-sky-100 hover:text-slate-900"
+            className="rounded-full p-1.5 text-slate-500 transition hover:bg-[#417df6]/10 hover:text-slate-900"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -128,7 +128,7 @@ export default function AdvancedFiltersModal({
                     className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
                       isSelected
                         ? "bg-slate-900 text-white shadow-[0_8px_16px_rgba(15,23,42,0.2)]"
-                        : "border border-[#d7e2f1] bg-white text-slate-700 hover:border-sky-200 hover:bg-sky-50"
+                        : "border border-[#d7e2f1] bg-white text-slate-700 hover:border-[#417df6] hover:bg-[#417df6]/8"
                     }`}
                   >
                     {tag}
@@ -146,14 +146,14 @@ export default function AdvancedFiltersModal({
               onReset();
               onClose();
             }}
-            className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-sky-50"
+            className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-[#417df6]/8"
           >
             Clear
           </button>
           <button
             type="button"
             onClick={onClose}
-            className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-sky-50"
+            className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-[#417df6]/8"
           >
             Cancel
           </button>

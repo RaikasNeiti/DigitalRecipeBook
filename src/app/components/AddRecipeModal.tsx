@@ -21,7 +21,7 @@ interface AddRecipeModalProps {
 }
 
 const inputClass =
-  "w-full rounded-2xl border border-[#d7e2f1] bg-white px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100";
+  "w-full rounded-2xl border border-[#d7e2f1] bg-white px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-[#417df6] focus:ring-2 focus:ring-[#417df6]/20";
 const labelClass = "mb-1.5 block text-sm font-semibold text-slate-700";
 
 export default function AddRecipeModal({
@@ -94,7 +94,7 @@ export default function AddRecipeModal({
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-full p-1.5 text-slate-500 transition hover:bg-sky-100 hover:text-slate-900"
+            className="rounded-full p-1.5 text-slate-500 transition hover:bg-[#417df6]/10 hover:text-slate-900"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -125,7 +125,7 @@ export default function AddRecipeModal({
             <label className={labelClass}>Recipe Image</label>
             <label
               htmlFor="image"
-              className="flex h-40 w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-white transition hover:border-sky-300"
+              className="flex h-40 w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-white transition hover:border-[#417df6]"
             >
               {imagePreview ? (
                 <img src={imagePreview} alt="Preview" className="h-full w-full object-cover" />
@@ -248,7 +248,7 @@ export default function AddRecipeModal({
             </div>
             <button
               type="button"
-              className="mt-2 w-full rounded-2xl border border-dashed border-slate-200 py-2 text-sm font-semibold text-slate-700 transition hover:border-sky-300 hover:bg-sky-50"
+              className="mt-2 w-full rounded-2xl border border-dashed border-slate-200 py-2 text-sm font-semibold text-slate-700 transition hover:border-[#417df6] hover:bg-[#417df6]/8"
               onClick={onAddIngredient}
             >
               + Add Ingredient
@@ -267,7 +267,7 @@ export default function AddRecipeModal({
                     className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
                       isSelected
                         ? "bg-slate-900 text-white shadow-[0_8px_16px_rgba(15,23,42,0.2)]"
-                        : "border border-[#d7e2f1] bg-white text-slate-700 hover:border-sky-200 hover:bg-sky-50"
+                        : "border border-[#d7e2f1] bg-white text-slate-700 hover:border-[#417df6] hover:bg-[#417df6]/8"
                     }`}
                     onClick={() => toggleTag(tag)}
                   >
@@ -282,7 +282,7 @@ export default function AddRecipeModal({
         <div className="flex justify-end gap-3 border-t border-[#dfe7f3] px-6 py-4">
           <button
             type="button"
-            className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-sky-50"
+            className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-[#417df6]/8"
             onClick={onClose}
           >
             Cancel

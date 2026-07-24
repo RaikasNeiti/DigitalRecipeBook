@@ -31,7 +31,7 @@ export default function SearchBar({
             placeholder="Search any recipe"
             value={searchQuery}
             onChange={(e) => onSearchChange(e.target.value)}
-            className="w-full rounded-2xl border border-white/80 bg-white/85 py-3 pl-11 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-sky-300 focus:ring-2 focus:ring-sky-100"
+            className="w-full rounded-2xl border border-white/80 bg-white/85 py-3 pl-11 pr-4 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-[#417df6] focus:ring-2 focus:ring-[#417df6]/20"
           />
         </div>
         <button
@@ -57,7 +57,7 @@ export default function SearchBar({
             />
           </svg>
           {activeFilterCount > 0 && (
-            <span className="absolute -right-1.5 -top-1.5 rounded-full border border-sky-200 bg-sky-100 px-1.5 py-0.5 text-[11px] font-bold leading-none text-slate-900">
+            <span className="absolute -right-1.5 -top-1.5 rounded-full border border-[#417df6]/30 bg-[#417df6]/14 px-1.5 py-0.5 text-[11px] font-bold leading-none text-slate-900">
               {activeFilterCount}
             </span>
           )}
@@ -72,7 +72,7 @@ export default function SearchBar({
               key={filter.key}
               type="button"
               onClick={() => onRemoveFilter(filter.key)}
-              className="inline-flex items-center gap-1 rounded-full border border-sky-200 bg-sky-100/80 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-sky-100"
+              className="inline-flex items-center gap-1 rounded-full border border-[#417df6]/30 bg-[#417df6]/14 px-3 py-1 text-xs font-semibold text-slate-700 transition hover:bg-[#417df6]/20"
               title="Remove filter"
               aria-label={`Remove ${filter.label} filter`}
             >

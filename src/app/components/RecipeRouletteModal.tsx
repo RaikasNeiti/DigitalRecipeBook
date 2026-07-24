@@ -27,7 +27,7 @@ type Rarity = {
 
 const RARITIES: Rarity[] = [
   { name: "Common", color: "#9ca3af", weight: 40 },
-  { name: "Mil-Spec", color: "#4b69ff", weight: 28 },
+  { name: "Mil-Spec", color: "#417df6", weight: 28 },
   { name: "Restricted", color: "#8847ff", weight: 18 },
   { name: "Classified", color: "#d32ce6", weight: 10 },
   { name: "Covert", color: "#eb4b4b", weight: 3 },
@@ -142,7 +142,7 @@ export default function RecipeRouletteModal({
             onClick={onClose}
             aria-label="Close"
             disabled={phase === "spinning"}
-            className="rounded-full p-1.5 text-slate-500 transition hover:bg-sky-100 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
+            className="rounded-full p-1.5 text-slate-500 transition hover:bg-[#417df6]/10 hover:text-slate-900 disabled:cursor-not-allowed disabled:opacity-40"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -151,7 +151,7 @@ export default function RecipeRouletteModal({
         </div>
 
         <div className="space-y-5 overflow-y-auto px-6 py-5">
-          <div className="rounded-2xl border border-sky-200 bg-sky-100/70 px-4 py-2.5 backdrop-blur">
+          <div className="rounded-2xl border border-[#417df6]/30 bg-[#417df6]/14 px-4 py-2.5 backdrop-blur">
             <p className="text-sm font-semibold text-slate-700">
               Spin to discover a random recipe from your current filter pool.
             </p>
@@ -172,7 +172,7 @@ export default function RecipeRouletteModal({
                       className={`rounded-full px-4 py-1.5 text-sm font-semibold transition disabled:cursor-not-allowed disabled:opacity-50 ${
                         isSelected
                           ? "bg-slate-900 text-white"
-                          : "border border-[#d7e2f1] bg-white text-slate-700 hover:border-sky-200 hover:bg-sky-50"
+                          : "border border-[#d7e2f1] bg-white text-slate-700 hover:border-[#417df6] hover:bg-[#417df6]/8"
                       }`}
                     >
                       {tag}
@@ -295,7 +295,7 @@ export default function RecipeRouletteModal({
               <button
                 type="button"
                 onClick={handleSpinAgain}
-                className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-sky-50"
+                className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-[#417df6]/8"
               >
                 Spin Again
               </button>
