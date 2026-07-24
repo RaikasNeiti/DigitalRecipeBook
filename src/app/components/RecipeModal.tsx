@@ -4,6 +4,7 @@ interface RecipeModalProps {
       cookingtime: string;
       ingredients: { name: string; quantity: string; unit: string }[];
       instructions: string;
+      image?: string;
     };
     onClose: () => void;
   }
@@ -13,6 +14,13 @@ interface RecipeModalProps {
       <div className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50">
         <div className="bg-white text-black rounded-lg p-8 w-[800px] max-w-full">
           <h2 className="text-2xl font-bold mb-4">{recipe.name}</h2>
+          {recipe.image && (
+            <img
+              src={recipe.image}
+              alt={recipe.name}
+              className="w-full h-56 object-cover rounded mb-4"
+            />
+          )}
           <p className="text-sm text-gray-600 mb-2">
             Cooking Time: {recipe.cookingtime} minutes
           </p>

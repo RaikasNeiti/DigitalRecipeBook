@@ -7,6 +7,8 @@ import AddRecipeModal from "./components/AddRecipeModal";
 import SearchBar from "./components/SearchBar"; // Import the SearchBar component
 import TagNavbar from "./components/TagNavbar"; // Import the TagNavbar component
 
+const API_BASE = "http://192.168.1.125:5000";
+
 export default function Home() {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isRecipeModalOpen, setIsRecipeModalOpen] = useState(false);
@@ -20,6 +22,7 @@ export default function Home() {
     servings: { amount: "", unit: "" }, // Add default structure for servings
     ingredients: [{ name: "", quantity: "", unit: "" }],
     tags: [] as string[], // Ensure tags is an array of strings
+    image: null as File | null,
   });
   const [selectedRecipe, setSelectedRecipe] = useState<{
     id: number;
@@ -28,6 +31,7 @@ export default function Home() {
     ingredients: { name: string; quantity: string; unit: string }[];
     instructions: string;
     tags?: string[];
+    image?: string;
   } | null>(null);
   const [recipes, setRecipes] = useState<
     {
@@ -37,6 +41,7 @@ export default function Home() {
       ingredients: { name: string; quantity: string; unit: string }[];
       instructions: string;
       tags?: string[];
+      image?: string;
     }[]
   >([]);
 
@@ -50,6 +55,7 @@ export default function Home() {
     ingredients: { name: string; quantity: string; unit: string }[];
     instructions: string;
     tags?: string[];
+    image?: string;
   }
 
   const handleOpenRecipeModal = (recipe: Recipe) => {
@@ -60,10 +66,14 @@ export default function Home() {
 
   const fetchRecipes = async () => {
     try {
-      const response = await fetch("http://192.168.1.125:5000/api/recipes-with-ingredients");
+      const response = await fetch(`${API_BASE}/api/recipes-with-ingredients`);
       if (response.ok) {
         const data = await response.json();
-        setRecipes(data);
+        setRecipes(
+          data.map((recipe: Recipe) =>
+            recipe.image ? { ...recipe, image: `${API_BASE}${recipe.image}` } : recipe
+          )
+        );
       } else {
         console.error("Failed to fetch recipes.");
       }
@@ -74,7 +84,7 @@ export default function Home() {
 
   const fetchTags = async () => {
     try {
-      const response = await fetch("http://192.168.1.125:5000/api/tags");
+      const response = await fetch(`${API_BASE}/api/tags`);
       if (response.ok) {
         const data = await response.json();
         setTags(data);
@@ -115,6 +125,10 @@ export default function Home() {
     }
   };
 
+  const handleImageChange = (file: File | null) => {
+    setFormData((prev) => ({ ...prev, image: file }));
+  };
+
   const addIngredientField = () => {
     setFormData((prev) => ({
       ...prev,
@@ -132,15 +146,20 @@ export default function Home() {
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
     try {
-      const response = await fetch("http://192.168.1.125:5000/api/recipes", {
+      const body = new FormData();
+      body.append("name", formData.name);
+      body.append("instructions", formData.instructions);
+      body.append("cookingtime", formData.cookingtime);
+      body.append("servings", JSON.stringify(formData.servings));
+      body.append("ingredients", JSON.stringify(formData.ingredients));
+      body.append("tags", JSON.stringify(formData.tags));
+      if (formData.image) {
+        body.append("image", formData.image);
+      }
+
+      const response = await fetch(`${API_BASE}/api/recipes`, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          ...formData,
-          tags: formData.tags,
-        }),
+        body,
       });
 
       if (response.ok) {
@@ -152,6 +171,7 @@ export default function Home() {
           servings: { amount: "", unit: "" }, // Add default structure for servings
           ingredients: [{ name: "", quantity: "", unit: "" }],
           tags: [], // Ensure tags is an array
+          image: null,
         });
         handleCloseModal();
         fetchRecipes(); // Refresh recipes after adding a new one
@@ -191,6 +211,7 @@ export default function Home() {
         <AddRecipeModal
           formData={formData}
           onChange={handleChange}
+          onImageChange={handleImageChange}
           onAddIngredient={addIngredientField}
           onRemoveIngredient={removeIngredientField} // Pass the remove function
           onClose={handleCloseModal}

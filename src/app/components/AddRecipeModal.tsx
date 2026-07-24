@@ -8,8 +8,10 @@ interface AddRecipeModalProps {
     servings: { amount: string; unit: string };
     ingredients: { name: string; quantity: string; unit: string }[];
     tags: string[];
+    image: File | null;
   };
   onChange: (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement | HTMLSelectElement>, index?: number) => void;
+  onImageChange: (file: File | null) => void;
   onAddIngredient: () => void;
   onRemoveIngredient: (index: number) => void; // New prop for removing an ingredient
   onClose: () => void;
@@ -19,6 +21,7 @@ interface AddRecipeModalProps {
 export default function AddRecipeModal({
   formData,
   onChange,
+  onImageChange,
   onAddIngredient,
   onRemoveIngredient,
   onClose,
@@ -27,6 +30,17 @@ export default function AddRecipeModal({
   const [availableTags, setAvailableTags] = useState<string[]>([]);
   const [selectedTags, setSelectedTags] = useState<string[]>(formData.tags);
   const [error, setError] = useState<string | null>(null); // State for validation errors
+  const [imagePreview, setImagePreview] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!formData.image) {
+      setImagePreview(null);
+      return;
+    }
+    const objectUrl = URL.createObjectURL(formData.image);
+    setImagePreview(objectUrl);
+    return () => URL.revokeObjectURL(objectUrl);
+  }, [formData.image]);
 
   // Fetch tags from the backend
   useEffect(() => {
@@ -107,6 +121,27 @@ export default function AddRecipeModal({
               value={formData.name}
               onChange={onChange}
             />
+          </div>
+
+          {/* Image */}
+          <div className="mb-4">
+            <label className="block font-medium mb-1" htmlFor="image">
+              Recipe Image
+            </label>
+            <input
+              type="file"
+              id="image"
+              accept="image/*"
+              className="w-full border rounded p-2"
+              onChange={(e) => onImageChange(e.target.files?.[0] ?? null)}
+            />
+            {imagePreview && (
+              <img
+                src={imagePreview}
+                alt="Preview"
+                className="mt-2 h-32 w-32 object-cover rounded"
+              />
+            )}
           </div>
 
           {/* Instructions */}

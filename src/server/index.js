@@ -1,23 +1,29 @@
 require('dotenv').config({ path: '../../.env' }); // Specify the relative path to the .env file
 let express = require('express');
 let app = express();
-let mysql = require('mysql2');
+const { Pool } = require('pg');
 let cors = require('cors');
-const util = require('util');
 let bodyParser = require('body-parser');
+const multer = require('multer');
+const path = require('path');
+const fs = require('fs');
 
 app.use(bodyParser.json());
 app.use(cors());
 
-// Create MySQL connection using environment variables
-let con = mysql.createConnection({
+// Create Postgres connection pool using environment variables
+const pool = new Pool({
     host: process.env.DB_HOST,
+    port: process.env.DB_PORT,
     user: process.env.DB_USER,
     password: process.env.DB_PASSWORD,
     database: process.env.DB_NAME,
 });
 
-const sqlquery = util.promisify(con.query).bind(con);
+const sqlquery = async (text, params) => {
+    const result = await pool.query(text, params);
+    return result.rows;
+};
 
 app.use(bodyParser.json())
 const {body, query, validationResult} = require('express-validator')
@@ -28,34 +34,65 @@ app.use(bodyParser.json()); // for reading JSON
 
 app.use(express.static('public'));
 
+// Image uploads
+const uploadsDir = path.join(__dirname, 'uploads');
+if (!fs.existsSync(uploadsDir)) {
+    fs.mkdirSync(uploadsDir, { recursive: true });
+}
+app.use('/uploads', express.static(uploadsDir));
+
+const storage = multer.diskStorage({
+    destination: (req, file, cb) => cb(null, uploadsDir),
+    filename: (req, file, cb) => {
+        const uniqueName = `${Date.now()}-${Math.round(Math.random() * 1e9)}${path.extname(file.originalname)}`;
+        cb(null, uniqueName);
+    },
+});
+
+const upload = multer({
+    storage,
+    limits: { fileSize: 5 * 1024 * 1024 }, // 5MB
+    fileFilter: (req, file, cb) => {
+        if (file.mimetype.startsWith('image/')) {
+            cb(null, true);
+        } else {
+            cb(new Error('Only image files are allowed.'));
+        }
+    },
+});
+
 app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
     res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
     next();
 });
 
-app.post("/api/recipes", async (req, res) => {
-  const { name, instructions, cookingtime, servings, ingredients, tags } = req.body;
+app.post("/api/recipes", upload.single("image"), async (req, res) => {
+  const { name, instructions, cookingtime } = req.body;
+  const servings = JSON.parse(req.body.servings);
+  const ingredients = JSON.parse(req.body.ingredients);
+  const tags = JSON.parse(req.body.tags);
+  const imagePath = req.file ? `/uploads/${req.file.filename}` : null;
 
   try {
     // Insert servings into the `servings` table
-    const servingsResult = await sqlquery(
-      "INSERT INTO servings (amount, unit) VALUES (?, ?)",
+    const [servingsRow] = await sqlquery(
+      "INSERT INTO servings (amount, unit) VALUES ($1, $2) RETURNING id",
       [servings.amount, servings.unit]
     );
-    const servingsId = servingsResult.insertId;
+    const servingsId = servingsRow.id;
 
     // Insert recipe into the `recipes` table
-    const recipeResult = await sqlquery(
-      "INSERT INTO recipes (name, instructions, cookingtime, servings_id) VALUES (?, ?, ?, ?)",
-      [name, instructions, cookingtime, servingsId]
+    const [recipeRow] = await sqlquery(
+      "INSERT INTO recipes (name, instructions, cookingtime, servings_id, image_path) VALUES ($1, $2, $3, $4, $5) RETURNING id",
+      [name, instructions, cookingtime, servingsId, imagePath]
     );
-    const recipeId = recipeResult.insertId;
+    const recipeId = recipeRow.id;
 
     // Insert ingredients into the `ingredients` table and link them to the recipe
     for (const ingredient of ingredients) {
       const [ingredientRow] = await sqlquery(
-        "SELECT id FROM ingredients WHERE name = ?",
+        "SELECT id FROM ingredients WHERE name = $1",
         [ingredient.name]
       );
 
@@ -63,36 +100,36 @@ app.post("/api/recipes", async (req, res) => {
       if (ingredientRow) {
         ingredientId = ingredientRow.id;
       } else {
-        const ingredientResult = await sqlquery(
-          "INSERT INTO ingredients (name) VALUES (?)",
+        const [insertedIngredient] = await sqlquery(
+          "INSERT INTO ingredients (name) VALUES ($1) RETURNING id",
           [ingredient.name]
         );
-        ingredientId = ingredientResult.insertId;
+        ingredientId = insertedIngredient.id;
       }
 
       await sqlquery(
-        "INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity, unit) VALUES (?, ?, ?, ?)",
+        "INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity, unit) VALUES ($1, $2, $3, $4)",
         [recipeId, ingredientId, ingredient.quantity, ingredient.unit]
       );
     }
 
     // Insert tags into the `tags` table and link them to the recipe
     for (const tag of tags) {
-      const [tagRow] = await sqlquery("SELECT id FROM tags WHERE name = ?", [tag]);
+      const [tagRow] = await sqlquery("SELECT id FROM tags WHERE name = $1", [tag]);
 
       let tagId;
       if (tagRow) {
         tagId = tagRow.id;
       } else {
-        const tagResult = await sqlquery(
-          "INSERT INTO tags (name) VALUES (?)",
+        const [insertedTag] = await sqlquery(
+          "INSERT INTO tags (name) VALUES ($1) RETURNING id",
           [tag]
         );
-        tagId = tagResult.insertId;
+        tagId = insertedTag.id;
       }
 
       await sqlquery(
-        "INSERT INTO recipe_tags (recipe_id, tag_id) VALUES (?, ?)",
+        "INSERT INTO recipe_tags (recipe_id, tag_id) VALUES ($1, $2)",
         [recipeId, tagId]
       );
     }
@@ -104,27 +141,38 @@ app.post("/api/recipes", async (req, res) => {
   }
 });
 
-app.put("/api/recipes", async (req, res) => {
-  const { id, name, instructions, cookingtime, servings, ingredients, tags } = req.body;
+app.put("/api/recipes", upload.single("image"), async (req, res) => {
+  const { id, name, instructions, cookingtime } = req.body;
+  const servings = JSON.parse(req.body.servings);
+  const ingredients = JSON.parse(req.body.ingredients);
+  const tags = JSON.parse(req.body.tags);
 
   try {
     // Update servings
     await sqlquery(
-      "UPDATE servings SET amount = ?, unit = ? WHERE id = (SELECT servings_id FROM recipes WHERE id = ?)",
+      "UPDATE servings SET amount = $1, unit = $2 WHERE id = (SELECT servings_id FROM recipes WHERE id = $3)",
       [servings.amount, servings.unit, id]
     );
 
-    // Update recipe
-    await sqlquery(
-      "UPDATE recipes SET name = ?, instructions = ?, cookingtime = ? WHERE id = ?",
-      [name, instructions, cookingtime, id]
-    );
+    // Update recipe (only replace the image if a new one was uploaded)
+    if (req.file) {
+      const imagePath = `/uploads/${req.file.filename}`;
+      await sqlquery(
+        "UPDATE recipes SET name = $1, instructions = $2, cookingtime = $3, image_path = $4 WHERE id = $5",
+        [name, instructions, cookingtime, imagePath, id]
+      );
+    } else {
+      await sqlquery(
+        "UPDATE recipes SET name = $1, instructions = $2, cookingtime = $3 WHERE id = $4",
+        [name, instructions, cookingtime, id]
+      );
+    }
 
     // Update ingredients
-    await sqlquery("DELETE FROM recipe_ingredients WHERE recipe_id = ?", [id]);
+    await sqlquery("DELETE FROM recipe_ingredients WHERE recipe_id = $1", [id]);
     for (const ingredient of ingredients) {
       const [ingredientRow] = await sqlquery(
-        "SELECT id FROM ingredients WHERE name = ?",
+        "SELECT id FROM ingredients WHERE name = $1",
         [ingredient.name]
       );
 
@@ -132,37 +180,37 @@ app.put("/api/recipes", async (req, res) => {
       if (ingredientRow) {
         ingredientId = ingredientRow.id;
       } else {
-        const ingredientResult = await sqlquery(
-          "INSERT INTO ingredients (name) VALUES (?)",
+        const [insertedIngredient] = await sqlquery(
+          "INSERT INTO ingredients (name) VALUES ($1) RETURNING id",
           [ingredient.name]
         );
-        ingredientId = ingredientResult.insertId;
+        ingredientId = insertedIngredient.id;
       }
 
       await sqlquery(
-        "INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity, unit) VALUES (?, ?, ?, ?)",
+        "INSERT INTO recipe_ingredients (recipe_id, ingredient_id, quantity, unit) VALUES ($1, $2, $3, $4)",
         [id, ingredientId, ingredient.quantity, ingredient.unit]
       );
     }
 
     // Update tags
-    await sqlquery("DELETE FROM recipe_tags WHERE recipe_id = ?", [id]);
+    await sqlquery("DELETE FROM recipe_tags WHERE recipe_id = $1", [id]);
     for (const tag of tags) {
-      const [tagRow] = await sqlquery("SELECT id FROM tags WHERE name = ?", [tag]);
+      const [tagRow] = await sqlquery("SELECT id FROM tags WHERE name = $1", [tag]);
 
       let tagId;
       if (tagRow) {
         tagId = tagRow.id;
       } else {
-        const tagResult = await sqlquery(
-          "INSERT INTO tags (name) VALUES (?)",
+        const [insertedTag] = await sqlquery(
+          "INSERT INTO tags (name) VALUES ($1) RETURNING id",
           [tag]
         );
-        tagId = tagResult.insertId;
+        tagId = insertedTag.id;
       }
 
       await sqlquery(
-        "INSERT INTO recipe_tags (recipe_id, tag_id) VALUES (?, ?)",
+        "INSERT INTO recipe_tags (recipe_id, tag_id) VALUES ($1, $2)",
         [id, tagId]
       );
     }
@@ -177,7 +225,7 @@ app.put("/api/recipes", async (req, res) => {
 app.get("/api/recipes-with-ingredients", async (req, res) => {
   try {
     const recipes = await sqlquery(`
-      SELECT r.id, r.name, r.instructions, r.cookingtime, s.amount AS servings_amount, s.unit AS servings_unit
+      SELECT r.id, r.name, r.instructions, r.cookingtime, r.image_path AS image, s.amount AS servings_amount, s.unit AS servings_unit
       FROM recipes r
       LEFT JOIN servings s ON r.servings_id = s.id
     `);
@@ -189,7 +237,7 @@ app.get("/api/recipes-with-ingredients", async (req, res) => {
           `SELECT i.name, ri.quantity, ri.unit
            FROM recipe_ingredients ri
            JOIN ingredients i ON ri.ingredient_id = i.id
-           WHERE ri.recipe_id = ?`,
+           WHERE ri.recipe_id = $1`,
           [recipe.id]
         );
 
@@ -198,7 +246,7 @@ app.get("/api/recipes-with-ingredients", async (req, res) => {
           `SELECT t.name
            FROM recipe_tags rt
            JOIN tags t ON rt.tag_id = t.id
-           WHERE rt.recipe_id = ?`,
+           WHERE rt.recipe_id = $1`,
           [recipe.id]
         );
 
@@ -227,19 +275,17 @@ app.get("/api/tags", async (req, res) => {
   }
 });
 
-let server = app.listen(5000, function () {
+let server = app.listen(5000, async function () {
     let host = server.address().address
     let port = server.address().port
 
     console.log("Example app listening at http://%s:%s", host, port);
 
     // Test database connection
-    con.connect((err) => {
-      if (err) {
-          console.error("Error connecting to the database:", err.message);
-      } else {
-          console.log("Successfully connected to the database!");
-      }
-  });
-
+    try {
+      await pool.query("SELECT 1");
+      console.log("Successfully connected to the database!");
+    } catch (err) {
+      console.error("Error connecting to the database:", err.message);
+    }
 })
