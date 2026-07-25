@@ -140,14 +140,13 @@ export default function Home() {
         onReset={() => setAdvancedFilters(defaultAdvancedFilters)}
       />
 
-      {/* AddRecipeModal */}
       {isModalOpen && (
         <AddRecipeModal
           formData={formData}
           onChange={handleChange}
           onImageChange={handleImageChange}
           onAddIngredient={addIngredientField}
-          onRemoveIngredient={removeIngredientField} // Pass the remove function
+          onRemoveIngredient={removeIngredientField}
           availableTags={tags}
           onClose={handleCloseModal}
           onSubmit={handleSubmit}

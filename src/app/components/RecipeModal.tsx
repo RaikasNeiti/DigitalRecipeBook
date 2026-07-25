@@ -18,6 +18,12 @@ interface RecipeModalProps {
   onDelete: () => void;
   onEdit: () => void;
 }
+
+const formatQuantity = (quantity: string) => {
+  const parsed = Number.parseFloat(quantity);
+  return Number.isNaN(parsed) ? quantity : parsed.toString();
+};
+
 export default function RecipeModal({
   recipe,
   isFavorited,
@@ -166,7 +172,7 @@ export default function RecipeModal({
 
           <h3 className="mt-6 text-xl font-bold text-slate-900">Ingredients</h3>
           <div className="relative mt-3 grid grid-cols-1 gap-y-2 sm:grid-cols-2 sm:gap-x-8">
-            <div className="hidden sm:block absolute inset-y-1 left-1/2 w-px -translate-x-1/2 bg-[#edf2fa]" />
+            <div className="absolute inset-y-1 left-1/2 hidden w-px -translate-x-1/2 bg-[#edf2fa] sm:block" />
 
             <ul className="space-y-2 pr-0 sm:pr-4">
               {leftIngredients.map((ingredient, index) => (
@@ -176,7 +182,7 @@ export default function RecipeModal({
                     <span className="truncate">{ingredient.name}</span>
                   </span>
                   <span className="shrink-0 whitespace-nowrap text-xs text-slate-500">
-                    {ingredient.quantity} {ingredient.unit}
+                    {formatQuantity(ingredient.quantity)} {ingredient.unit}
                   </span>
                 </li>
               ))}
@@ -190,7 +196,7 @@ export default function RecipeModal({
                     <span className="truncate">{ingredient.name}</span>
                   </span>
                   <span className="shrink-0 whitespace-nowrap text-xs text-slate-500">
-                    {ingredient.quantity} {ingredient.unit}
+                    {formatQuantity(ingredient.quantity)} {ingredient.unit}
                   </span>
                 </li>
               ))}
