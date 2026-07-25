@@ -22,8 +22,8 @@ interface EditRecipeModalProps {
 }
 
 const inputClass =
-  "w-full rounded-lg border border-slate-200 bg-white px-3 py-2 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-amber-400 focus:ring-2 focus:ring-amber-100";
-const labelClass = "mb-1.5 block text-sm font-medium text-slate-700";
+  "w-full rounded-2xl border border-[#d7e2f1] bg-white px-3 py-2.5 text-sm text-slate-900 placeholder-slate-400 outline-none transition focus:border-[#417df6] focus:ring-2 focus:ring-[#417df6]/20";
+const labelClass = "mb-1.5 block text-sm font-semibold text-slate-700";
 
 export default function EditRecipeModal({
   formData,
@@ -104,15 +104,15 @@ export default function EditRecipeModal({
   };
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/50 p-4">
-      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-2xl bg-white shadow-xl">
-        <div className="flex items-center justify-between border-b border-slate-100 px-6 py-4">
-          <h2 className="text-xl font-semibold text-slate-900">Edit Recipe</h2>
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-slate-900/30 p-4">
+      <div className="flex max-h-[90vh] w-full max-w-2xl flex-col overflow-hidden rounded-3xl border border-[#dfe7f3] bg-[#f8fbff] shadow-[0_20px_46px_rgba(30,64,175,0.18)]">
+        <div className="flex items-center justify-between border-b border-[#dfe7f3] px-6 py-4">
+          <h2 className="text-xl font-bold text-slate-900">Edit Recipe</h2>
           <button
             type="button"
             onClick={onClose}
             aria-label="Close"
-            className="rounded-full p-1.5 text-slate-400 transition hover:bg-slate-100 hover:text-slate-700"
+            className="rounded-full p-1.5 text-slate-500 transition hover:bg-[#417df6]/10 hover:text-slate-900"
           >
             <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-5 w-5">
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18 18 6M6 6l12 12" />
@@ -120,12 +120,12 @@ export default function EditRecipeModal({
           </button>
         </div>
 
-        <form id="edit-recipe-form" onSubmit={handleSubmit} className="overflow-y-auto px-6 py-5">
+        <form id="edit-recipe-form" onSubmit={handleSubmit} className="space-y-5 overflow-y-auto px-6 py-5">
           {error && (
-            <p className="mb-4 rounded-lg bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+            <p className="mb-4 rounded-2xl border border-rose-200 bg-rose-50 px-3 py-2 text-sm text-rose-700">{error}</p>
           )}
 
-          <div className="mb-5">
+          <div className="rounded-2xl border border-[#e3eaf5] bg-white p-4">
             <label className={labelClass} htmlFor="edit-name">
               Recipe Name
             </label>
@@ -139,18 +139,18 @@ export default function EditRecipeModal({
             />
           </div>
 
-          <div className="mb-5">
+          <div className="rounded-2xl border border-[#e3eaf5] bg-white p-4">
             <label className={labelClass}>Change Image</label>
             <label
               htmlFor="edit-image"
-              className="flex h-40 w-full cursor-pointer items-center justify-center overflow-hidden rounded-lg border-2 border-dashed border-slate-200 bg-slate-50 transition hover:border-amber-300"
+              className="flex h-40 w-full cursor-pointer items-center justify-center overflow-hidden rounded-2xl border-2 border-dashed border-slate-200 bg-white transition hover:border-[#417df6]"
             >
               {imagePreview ? (
                 <img src={imagePreview} alt="New preview" className="h-full w-full object-cover" />
               ) : existingImage ? (
                 <img src={existingImage} alt="Current recipe" className="h-full w-full object-cover" />
               ) : (
-                <span className="text-sm text-slate-400">Click to choose a new image</span>
+                <span className="text-sm font-medium text-zinc-500">Click to choose a new image</span>
               )}
             </label>
             <input
@@ -160,10 +160,10 @@ export default function EditRecipeModal({
               className="hidden"
               onChange={(e) => onImageChange(e.target.files?.[0] ?? null)}
             />
-            <p className="mt-1 text-xs text-slate-500">Leave unchanged if you want to keep the current image.</p>
+            <p className="mt-1 text-xs text-zinc-500">Leave unchanged if you want to keep the current image.</p>
           </div>
 
-          <div className="mb-5">
+          <div className="rounded-2xl border border-[#e3eaf5] bg-white p-4">
             <label className={labelClass} htmlFor="instructions">
               Instructions
             </label>
@@ -176,48 +176,50 @@ export default function EditRecipeModal({
             ></textarea>
           </div>
 
-          <div className="mb-5">
-            <label className={labelClass} htmlFor="cookingtime">
-              Cooking Time (minutes)
-            </label>
-            <input
-              type="number"
-              id="cookingtime"
-              className={inputClass}
-              placeholder="Enter cooking time"
-              value={formData.cookingtime}
-              onChange={onChange}
-            />
-          </div>
-
-          <div className="mb-5">
-            <label className={labelClass}>Servings</label>
-            <div className="flex gap-2">
+          <div className="grid gap-4 sm:grid-cols-2">
+            <div className="rounded-2xl border border-[#e3eaf5] bg-white p-4">
+              <label className={labelClass} htmlFor="cookingtime">
+                Cooking Time (minutes)
+              </label>
               <input
                 type="number"
-                id="servings.amount"
+                id="cookingtime"
                 className={inputClass}
-                placeholder="Amount"
-                value={formData.servings.amount}
+                placeholder="Enter cooking time"
+                value={formData.cookingtime}
                 onChange={onChange}
               />
-              <select
-                id="servings.unit"
-                className={inputClass}
-                value={formData.servings.unit}
-                onChange={onChange}
-              >
-                <option value="servings">Servings</option>
-                <option value="people">People</option>
-              </select>
+            </div>
+
+            <div className="rounded-2xl border border-[#e3eaf5] bg-white p-4">
+              <label className={labelClass}>Servings</label>
+              <div className="flex gap-2">
+                <input
+                  type="number"
+                  id="servings.amount"
+                  className={inputClass}
+                  placeholder="Amount"
+                  value={formData.servings.amount}
+                  onChange={onChange}
+                />
+                <select
+                  id="servings.unit"
+                  className={inputClass}
+                  value={formData.servings.unit}
+                  onChange={onChange}
+                >
+                  <option value="servings">Servings</option>
+                  <option value="people">People</option>
+                </select>
+              </div>
             </div>
           </div>
 
-          <div className="mb-5">
+          <div className="rounded-2xl border border-[#e3eaf5] bg-white p-4">
             <label className={labelClass}>Ingredients</label>
             <div className="space-y-2">
               {formData.ingredients.map((ingredient, index) => (
-                <div key={index} className="flex items-center gap-2 rounded-lg bg-slate-50 p-2">
+                <div key={index} className="flex items-center gap-2 rounded-2xl border border-[#e3eaf5] bg-white p-2">
                   <input
                     type="text"
                     name="name"
@@ -255,7 +257,7 @@ export default function EditRecipeModal({
                   <button
                     type="button"
                     aria-label="Remove ingredient"
-                    className="shrink-0 rounded-full p-2 text-slate-400 transition hover:bg-red-50 hover:text-red-500"
+                    className="shrink-0 rounded-full p-2 text-slate-500 transition hover:bg-rose-50 hover:text-rose-500"
                     onClick={() => onRemoveIngredient(index)}
                   >
                     <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
@@ -267,14 +269,14 @@ export default function EditRecipeModal({
             </div>
             <button
               type="button"
-              className="mt-2 w-full rounded-lg border border-dashed border-slate-300 py-2 text-sm font-medium text-amber-600 transition hover:border-amber-300 hover:bg-amber-50"
+              className="mt-2 w-full rounded-2xl border border-dashed border-slate-200 py-2 text-sm font-semibold text-slate-700 transition hover:border-[#417df6] hover:bg-[#417df6]/8"
               onClick={onAddIngredient}
             >
               + Add Ingredient
             </button>
           </div>
 
-          <div>
+          <div className="rounded-2xl border border-[#e3eaf5] bg-white p-4">
             <label className={labelClass}>Tags</label>
             <div className="flex flex-wrap gap-2">
               {availableTags.map((tag) => {
@@ -283,10 +285,10 @@ export default function EditRecipeModal({
                   <button
                     key={tag}
                     type="button"
-                    className={`rounded-full px-4 py-1.5 text-sm font-medium transition ${
+                    className={`rounded-full px-4 py-1.5 text-sm font-semibold transition ${
                       isSelected
-                        ? "bg-amber-400 text-white"
-                        : "border border-slate-200 bg-white text-slate-600 hover:border-amber-300"
+                        ? "bg-slate-900 text-white shadow-[0_8px_16px_rgba(15,23,42,0.2)]"
+                        : "border border-[#d7e2f1] bg-white text-slate-700 hover:border-[#417df6] hover:bg-[#417df6]/8"
                     }`}
                     onClick={() => toggleTag(tag)}
                   >
@@ -298,10 +300,10 @@ export default function EditRecipeModal({
           </div>
         </form>
 
-        <div className="flex justify-end gap-3 border-t border-slate-100 px-6 py-4">
+        <div className="flex justify-end gap-3 border-t border-[#dfe7f3] px-6 py-4">
           <button
             type="button"
-            className="rounded-full px-5 py-2 text-sm font-medium text-slate-600 transition hover:bg-slate-100"
+            className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-[#417df6]/8"
             onClick={onClose}
           >
             Cancel
@@ -309,7 +311,7 @@ export default function EditRecipeModal({
           <button
             type="submit"
             form="edit-recipe-form"
-            className="rounded-full bg-amber-400 px-5 py-2 text-sm font-medium text-white shadow-sm transition hover:bg-amber-500"
+            className="rounded-full bg-slate-900 px-5 py-2 text-sm font-semibold text-white shadow-[0_8px_16px_rgba(15,23,42,0.2)] transition hover:bg-slate-800"
           >
             Save Changes
           </button>

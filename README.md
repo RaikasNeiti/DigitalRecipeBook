@@ -74,6 +74,12 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+Set environment variables in root .env:
+
+```bash
+NEXT_PUBLIC_API_BASE=http://localhost:5000
+```
+
 First, run the development server:
 
 ```bash
