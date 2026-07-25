@@ -7,7 +7,7 @@ WORKDIR /recipe/
 # Copy package.json and package-lock.json
 COPY package.json /recipe/
 COPY package-lock.json /recipe/
-COPY .env ../
+COPY .env /.env
 
 # Install dependencies
 RUN npm install

@@ -1,3 +1,5 @@
+import { getTagClassName } from "./tagColor";
+
 interface RecipeModalProps {
   recipe: {
     id: number;
@@ -10,16 +12,24 @@ interface RecipeModalProps {
     servings_amount?: string | number;
     servings_unit?: string;
   };
+  isFavorited: boolean;
+  onToggleFavorite: (recipeId: number) => void;
   onClose: () => void;
   onDelete: () => void;
   onEdit: () => void;
 }
-export default function RecipeModal({ recipe, onClose, onDelete, onEdit }: RecipeModalProps) {
+export default function RecipeModal({
+  recipe,
+  isFavorited,
+  onToggleFavorite,
+  onClose,
+  onDelete,
+  onEdit,
+}: RecipeModalProps) {
   const instructionSteps = recipe.instructions
     .split(/\r?\n/)
     .map((step) => step.trim())
     .filter(Boolean);
-  const primaryTag = recipe.tags?.[0];
   const midpoint = Math.ceil(recipe.ingredients.length / 2);
   const leftIngredients = recipe.ingredients.slice(0, midpoint);
   const rightIngredients = recipe.ingredients.slice(midpoint);
@@ -105,8 +115,24 @@ export default function RecipeModal({ recipe, onClose, onDelete, onEdit }: Recip
         </div>
 
         <div className="min-h-0 overflow-y-auto p-5 sm:p-6">
-          <h2 className="text-4xl font-bold leading-tight text-slate-900">{recipe.name}</h2>
-          <div className="mt-3 flex items-center gap-3 text-sm text-slate-600">
+          <div className="flex items-start justify-between gap-3">
+            <h2 className="text-4xl font-bold leading-tight text-slate-900">{recipe.name}</h2>
+            <button
+              type="button"
+              onClick={() => onToggleFavorite(recipe.id)}
+              aria-label={isFavorited ? `Remove ${recipe.name} from favorites` : `Add ${recipe.name} to favorites`}
+              className={`inline-flex h-10 w-10 shrink-0 items-center justify-center rounded-full border transition ${
+                isFavorited
+                  ? "border-rose-200 bg-rose-100 text-rose-500"
+                  : "border-slate-200 bg-white text-slate-500 hover:border-rose-200 hover:bg-rose-50 hover:text-rose-500"
+              }`}
+            >
+              <svg xmlns="http://www.w3.org/2000/svg" fill={isFavorited ? "currentColor" : "none"} viewBox="0 0 24 24" strokeWidth={1.8} stroke="currentColor" className="h-4.5 w-4.5">
+                <path strokeLinecap="round" strokeLinejoin="round" d="m21 8.25c0-2.485-2.015-4.5-4.5-4.5-1.74 0-3.25.988-4 2.433-.75-1.445-2.26-2.433-4-2.433-2.485 0-4.5 2.015-4.5 4.5 0 6.375 8.5 11.25 8.5 11.25S21 14.625 21 8.25Z" />
+              </svg>
+            </button>
+          </div>
+          <div className="mt-3 flex items-start gap-3 text-sm text-slate-600">
             <span className="inline-flex items-center gap-1.5">
               <svg
                 xmlns="http://www.w3.org/2000/svg"
@@ -124,10 +150,17 @@ export default function RecipeModal({ recipe, onClose, onDelete, onEdit }: Recip
               </svg>
               <span>{recipe.cookingtime} minutes</span>
             </span>
-            {primaryTag && (
-              <span className="rounded-full border border-[#417df6]/30 bg-[#417df6]/14 px-2.5 py-1 text-xs font-semibold text-slate-700">
-                {primaryTag}
-              </span>
+            {recipe.tags && recipe.tags.length > 0 && (
+              <div className="flex flex-wrap items-center gap-1.5">
+                {recipe.tags.map((tag) => (
+                  <span
+                    key={tag}
+                    className={`rounded-full px-2.5 py-1 text-xs font-semibold ${getTagClassName(tag)}`}
+                  >
+                    {tag}
+                  </span>
+                ))}
+              </div>
             )}
           </div>
 
