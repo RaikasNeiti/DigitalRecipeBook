@@ -51,6 +51,7 @@ export default function Home() {
     handleEditImageChange,
     addIngredientField,
     removeIngredientField,
+    importIngredients,
     addEditIngredientField,
     removeEditIngredientField,
     openEditModal,
@@ -68,6 +69,10 @@ export default function Home() {
 
   const handleOpenModal = () => setIsModalOpen(true);
   const handleCloseModal = () => setIsModalOpen(false);
+  const handleDiscardModal = () => {
+    resetAddForm();
+    handleCloseModal();
+  };
 
   const handleOpenRecipeModal = (recipe: Recipe) => {
     setSelectedRecipe(recipe);
@@ -147,8 +152,10 @@ export default function Home() {
           onImageChange={handleImageChange}
           onAddIngredient={addIngredientField}
           onRemoveIngredient={removeIngredientField}
+          onImportIngredients={importIngredients}
           availableTags={tags}
           onClose={handleCloseModal}
+          onDiscard={handleDiscardModal}
           onSubmit={handleSubmit}
         />
       )}

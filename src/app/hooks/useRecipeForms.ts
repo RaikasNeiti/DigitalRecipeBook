@@ -1,5 +1,5 @@
 import { ChangeEvent, Dispatch, SetStateAction, useState } from "react";
-import { Recipe, RecipeFormData, createInitialFormData } from "../types/recipes";
+import { Ingredient, Recipe, RecipeFormData, createInitialFormData } from "../types/recipes";
 
 export function useRecipeForms() {
   const [formData, setFormData] = useState<RecipeFormData>(createInitialFormData);
@@ -69,6 +69,16 @@ export function useRecipeForms() {
     }));
   };
 
+  const importIngredients = (parsed: Ingredient[]) => {
+    if (parsed.length === 0) return;
+    setFormData((prev) => {
+      const existing = prev.ingredients.filter(
+        (ingredient) => ingredient.name.trim() || ingredient.quantity.trim() || ingredient.unit.trim()
+      );
+      return { ...prev, ingredients: [...existing, ...parsed] };
+    });
+  };
+
   const addEditIngredientField = () => {
     setEditFormData((prev) => ({
       ...prev,
@@ -124,6 +134,7 @@ export function useRecipeForms() {
     handleEditImageChange,
     addIngredientField,
     removeIngredientField,
+    importIngredients,
     addEditIngredientField,
     removeEditIngredientField,
     openEditModal,
