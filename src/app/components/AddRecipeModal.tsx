@@ -1,5 +1,7 @@
 import React, { useState, useEffect } from "react";
 import ConfirmDialog from "./ConfirmDialog";
+import { Ingredient } from "../types/recipes";
+import { parseIngredientLines } from "../utils/parseIngredients";
 
 interface AddRecipeModalProps {
   formData: {
@@ -15,8 +17,10 @@ interface AddRecipeModalProps {
   onImageChange: (file: File | null) => void;
   onAddIngredient: () => void;
   onRemoveIngredient: (index: number) => void; // New prop for removing an ingredient
+  onImportIngredients: (ingredients: Ingredient[]) => void;
   availableTags: string[];
   onClose: () => void;
+  onDiscard: () => void;
   onSubmit: () => void;
 }
 
@@ -30,14 +34,19 @@ export default function AddRecipeModal({
   onImageChange,
   onAddIngredient,
   onRemoveIngredient,
+  onImportIngredients,
   availableTags,
   onClose,
+  onDiscard,
   onSubmit,
 }: AddRecipeModalProps) {
   const [selectedTags, setSelectedTags] = useState<string[]>(formData.tags);
   const [error, setError] = useState<string | null>(null); // State for validation errors
   const [imagePreview, setImagePreview] = useState<string | null>(null);
   const [showAddConfirm, setShowAddConfirm] = useState(false);
+  const [showDiscardConfirm, setShowDiscardConfirm] = useState(false);
+  const [isImportOpen, setIsImportOpen] = useState(false);
+  const [importText, setImportText] = useState("");
 
   useEffect(() => {
     if (!formData.image) {
@@ -48,6 +57,15 @@ export default function AddRecipeModal({
     setImagePreview(objectUrl);
     return () => URL.revokeObjectURL(objectUrl);
   }, [formData.image]);
+
+  const handleImportIngredients = () => {
+    const parsed = parseIngredientLines(importText);
+    if (parsed.length > 0) {
+      onImportIngredients(parsed);
+    }
+    setImportText("");
+    setIsImportOpen(false);
+  };
 
   // Toggle tag selection
   const toggleTag = (tag: string) => {
@@ -195,7 +213,59 @@ export default function AddRecipeModal({
           </div>
 
           <div className="rounded-2xl border border-[#e3eaf5] bg-white p-4">
-            <label className={labelClass}>Ingredients</label>
+            <div className="mb-1.5 flex items-center gap-2">
+              <button
+                type="button"
+                onClick={() => setIsImportOpen((prev) => !prev)}
+                aria-label="Import ingredients from text"
+                title="Import ingredients from text"
+                className={`flex h-7 w-7 shrink-0 items-center justify-center rounded-full border transition ${
+                  isImportOpen
+                    ? "border-[#417df6] bg-[#417df6]/10 text-[#417df6]"
+                    : "border-[#d7e2f1] text-slate-500 hover:border-[#417df6] hover:text-[#417df6]"
+                }`}
+              >
+                <svg xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" strokeWidth={2} stroke="currentColor" className="h-4 w-4">
+                  <path strokeLinecap="round" strokeLinejoin="round" d="M3 16.5v2.25A2.25 2.25 0 0 0 5.25 21h13.5A2.25 2.25 0 0 0 21 18.75V16.5M7.5 12l4.5 4.5m0 0 4.5-4.5m-4.5 4.5V3" />
+                </svg>
+              </button>
+              <label className="text-sm font-semibold text-slate-700">Ingredients</label>
+            </div>
+
+            {isImportOpen && (
+              <div className="mb-3 rounded-2xl border border-dashed border-[#d7e2f1] bg-[#f8fbff] p-3">
+                <p className="mb-2 text-xs text-slate-500">
+                  Paste one ingredient per line, e.g. &quot;2 tbsp olive oil&quot;. Quantity, unit and name will be filled in automatically.
+                </p>
+                <textarea
+                  className={`${inputClass} h-28 resize-none`}
+                  placeholder={"2 tbsp olive oil\n250 g cherry tomatoes"}
+                  value={importText}
+                  onChange={(e) => setImportText(e.target.value)}
+                />
+                <div className="mt-2 flex justify-end gap-2">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setImportText("");
+                      setIsImportOpen(false);
+                    }}
+                    className="rounded-full px-4 py-1.5 text-sm font-semibold text-slate-600 transition hover:bg-slate-100"
+                  >
+                    Cancel
+                  </button>
+                  <button
+                    type="button"
+                    onClick={handleImportIngredients}
+                    disabled={!importText.trim()}
+                    className="rounded-full bg-[#417df6] px-4 py-1.5 text-sm font-semibold text-white shadow-sm transition hover:bg-[#3268d1] disabled:cursor-not-allowed disabled:bg-slate-300"
+                  >
+                    Add to List
+                  </button>
+                </div>
+              </div>
+            )}
+
             <div className="space-y-2">
               {formData.ingredients.map((ingredient, index) => (
                 <div key={index} className="flex items-center gap-2 rounded-2xl border border-[#e3eaf5] bg-white p-2">
@@ -283,7 +353,7 @@ export default function AddRecipeModal({
           <button
             type="button"
             className="rounded-full border border-slate-200 px-5 py-2 text-sm font-semibold text-slate-700 transition hover:bg-[#417df6]/8"
-            onClick={onClose}
+            onClick={() => setShowDiscardConfirm(true)}
           >
             Cancel
           </button>
@@ -303,6 +373,19 @@ export default function AddRecipeModal({
           confirmLabel="Add Recipe"
           onCancel={() => setShowAddConfirm(false)}
           onConfirm={confirmAdd}
+        />
+      )}
+      {showDiscardConfirm && (
+        <ConfirmDialog
+          title="Discard this recipe?"
+          message="Everything you've entered will be cleared. Are you sure you want to discard this recipe?"
+          confirmLabel="Discard"
+          tone="danger"
+          onCancel={() => setShowDiscardConfirm(false)}
+          onConfirm={() => {
+            setShowDiscardConfirm(false);
+            onDiscard();
+          }}
         />
       )}
     </div>

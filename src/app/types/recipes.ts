@@ -30,7 +30,7 @@ export const createInitialFormData = (): RecipeFormData => ({
   name: "",
   instructions: "",
   cookingtime: "",
-  servings: { amount: "", unit: "" },
+  servings: { amount: "4", unit: "servings" },
   ingredients: [{ name: "", quantity: "", unit: "" }],
   tags: [],
   image: null,
