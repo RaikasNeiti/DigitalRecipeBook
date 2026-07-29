@@ -29,6 +29,16 @@ const sqlquery = async (text, params) => {
     return result.rows;
 };
 
+app.get("/health", async (req, res) => {
+    try {
+        await pool.query("SELECT 1");
+        res.status(200).send({ status: "ok" });
+    } catch (error) {
+        console.error("Health check failed:", error.message);
+        res.status(503).send({ status: "error" });
+    }
+});
+
 app.use(bodyParser.json())
 const {body, query, validationResult} = require('express-validator')
 

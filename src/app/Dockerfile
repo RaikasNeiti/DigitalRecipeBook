@@ -18,8 +18,11 @@ RUN npm install
 COPY ./src/app /recipe/app
 COPY ./public /recipe/public
 
+# Build the production bundle
+RUN npm run build
+
 # Expose the frontend port
 EXPOSE 3000
 
-# Start the frontend development server
-CMD ["npm", "run", "dev"]
+# Start the frontend production server
+CMD ["npm", "run", "start"]
