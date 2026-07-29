@@ -11,10 +11,12 @@ import HomeTopNav from "./components/home/HomeTopNav";
 import HomeHero from "./components/home/HomeHero";
 import HomeRecipesSection from "./components/home/HomeRecipesSection";
 import HomeFloatingActions from "./components/home/HomeFloatingActions";
+import LoginModal from "./components/LoginModal";
 import { Recipe } from "./types/recipes";
 import { useRecipeBookData } from "./hooks/useRecipeBookData";
 import { useRecipeForms } from "./hooks/useRecipeForms";
 import { useRecipeFiltering } from "./hooks/useRecipeFiltering";
+import { useAuth } from "./hooks/useAuth";
 
 const defaultAdvancedFilters: AdvancedFilters = {
   minCookingTime: "",
@@ -36,9 +38,11 @@ export default function Home() {
   const [selectedSidebarCategory, setSelectedSidebarCategory] = useState<string | null>(null);
   const [advancedFilters, setAdvancedFilters] = useState<AdvancedFilters>(defaultAdvancedFilters);
   const [selectedRecipe, setSelectedRecipe] = useState<Recipe | null>(null);
+  const [isLoginModalOpen, setIsLoginModalOpen] = useState(false);
 
+  const { token, isAuthenticated, login, logout } = useAuth();
   const { tags, recipes, favoriteRecipeIds, toggleFavorite, addRecipe, deleteRecipe, updateRecipe } =
-    useRecipeBookData();
+    useRecipeBookData(token, logout);
   const {
     formData,
     editRecipeId,
@@ -67,7 +71,13 @@ export default function Home() {
     favoriteRecipeIds,
   });
 
-  const handleOpenModal = () => setIsModalOpen(true);
+  const handleOpenModal = () => {
+    if (!isAuthenticated) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+    setIsModalOpen(true);
+  };
   const handleCloseModal = () => setIsModalOpen(false);
   const handleDiscardModal = () => {
     resetAddForm();
@@ -118,9 +128,21 @@ export default function Home() {
   };
 
   const handleOpenEditModal = (recipe: Recipe) => {
+    if (!isAuthenticated) {
+      setIsLoginModalOpen(true);
+      return;
+    }
     openEditModal(recipe);
     setIsRecipeModalOpen(false);
     setIsEditModalOpen(true);
+  };
+
+  const handleRequestDelete = (recipeId: number) => {
+    if (!isAuthenticated) {
+      setIsLoginModalOpen(true);
+      return;
+    }
+    setConfirmDeleteId(recipeId);
   };
 
   const handleUpdateRecipe = async (selectedTags: string[]) => {
@@ -165,7 +187,7 @@ export default function Home() {
           isFavorited={favoriteRecipeIds.has(selectedRecipe.id)}
           onToggleFavorite={toggleFavorite}
           onClose={handleCloseRecipeModal}
-          onDelete={() => setConfirmDeleteId(selectedRecipe.id)}
+          onDelete={() => handleRequestDelete(selectedRecipe.id)}
           onEdit={() => handleOpenEditModal(selectedRecipe)}
         />
       )}
@@ -211,6 +233,9 @@ export default function Home() {
           }}
         />
       )}
+      {isLoginModalOpen && (
+        <LoginModal onClose={() => setIsLoginModalOpen(false)} onLogin={login} />
+      )}
 
       <main className="flex min-h-screen w-full gap-4 px-3 py-3 sm:px-5 sm:py-4 lg:gap-6 lg:px-7 lg:py-5 xl:px-9 2xl:px-12">
         <HomeSidebar
@@ -223,7 +248,12 @@ export default function Home() {
         />
 
         <div className="min-w-0 flex-1">
-          <HomeTopNav onOpenRoulette={() => setIsRouletteModalOpen(true)} />
+          <HomeTopNav
+            onOpenRoulette={() => setIsRouletteModalOpen(true)}
+            isAuthenticated={isAuthenticated}
+            onLoginClick={() => setIsLoginModalOpen(true)}
+            onLogoutClick={logout}
+          />
 
           <HomeHero
             searchQuery={searchQuery}

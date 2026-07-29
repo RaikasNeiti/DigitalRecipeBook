@@ -70,6 +70,26 @@ CREATE TABLE unit_conversions (
 );
 ```
 
+## Authentication
+
+Editing recipes (add/edit/delete) requires a single shared password. Browsing
+(all `GET` routes) stays public.
+
+1. Generate a bcrypt hash of the password you want to use:
+
+   ```bash
+   npm run hash-password -- "your-password-here"
+   ```
+
+2. Copy the printed `APP_PASSWORD_HASH=...` line into your root `.env` file.
+3. Make sure `.env` also has a `JWT_SECRET` set (any long random string —
+   already generated for you by default). Restart the backend after changing
+   either value.
+4. On the site, click **Log In** in the top nav and enter the password. The
+   frontend stores the returned JWT in `localStorage` and sends it as
+   `Authorization: Bearer <token>` on add/edit/delete requests. Tokens expire
+   after 7 days.
+
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
 ## Getting Started

@@ -6,7 +6,8 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "next lint"
+    "lint": "next lint",
+    "hash-password": "node scripts/generate-password-hash.js"
   },
   "dependencies": {
     "bcrypt": "^5.1.1",
@@ -15,6 +16,7 @@
     "dotenv": "^16.4.7",
     "express": "^5.1.0",
     "express-validator": "^7.2.1",
+    "jsonwebtoken": "^9.0.3",
     "multer": "^1.4.5-lts.2",
     "next": "15.2.4",
     "pg": "^8.22.0",

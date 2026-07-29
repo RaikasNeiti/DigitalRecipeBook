@@ -24,7 +24,7 @@ const getApiUrl = (path: string) => {
   return `${apiBase}${path}`;
 };
 
-export function useRecipeBookData() {
+export function useRecipeBookData(token: string | null, onUnauthorized?: () => void) {
   const [tags, setTags] = useState<string[]>([]);
   const [recipes, setRecipes] = useState<Recipe[]>([]);
   const [favoriteRecipeIds, setFavoriteRecipeIds] = useState<Set<number>>(new Set());
@@ -102,6 +102,14 @@ export function useRecipeBookData() {
     });
   };
 
+  const authHeaders = (): HeadersInit => (token ? { Authorization: `Bearer ${token}` } : {});
+
+  const handleUnauthorizedResponse = (response: Response) => {
+    if (response.status === 401) {
+      onUnauthorized?.();
+    }
+  };
+
   const addRecipe = async (formData: RecipeFormData) => {
     const body = new FormData();
     body.append("name", formData.name);
@@ -116,10 +124,12 @@ export function useRecipeBookData() {
 
     const response = await fetch(getApiUrl("/api/recipes"), {
       method: "POST",
+      headers: authHeaders(),
       body,
     });
 
     if (!response.ok) {
+      handleUnauthorizedResponse(response);
       return false;
     }
 
@@ -130,9 +140,11 @@ export function useRecipeBookData() {
   const deleteRecipe = async (id: number) => {
     const response = await fetch(getApiUrl(`/api/recipes/${id}`), {
       method: "DELETE",
+      headers: authHeaders(),
     });
 
     if (!response.ok) {
+      handleUnauthorizedResponse(response);
       return false;
     }
 
@@ -159,10 +171,12 @@ export function useRecipeBookData() {
 
     const response = await fetch(getApiUrl("/api/recipes"), {
       method: "PUT",
+      headers: authHeaders(),
       body,
     });
 
     if (!response.ok) {
+      handleUnauthorizedResponse(response);
       throw new Error("Failed to update recipe.");
     }
 

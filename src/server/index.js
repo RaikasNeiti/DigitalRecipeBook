@@ -29,6 +29,8 @@ app.use(bodyParser.json())
 const {body, query, validationResult} = require('express-validator')
 
 const bcrypt = require('bcrypt');
+const jwt = require('jsonwebtoken');
+const secret = require('./config/secret');
 app.use(bodyParser.urlencoded({ extended: false }));
 app.use(bodyParser.json()); // for reading JSON
 
@@ -63,11 +65,56 @@ const upload = multer({
 
 app.use(function(req, res, next) {
     res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
     next();
 });
 
-app.post("/api/recipes", upload.single("image"), async (req, res) => {
+// Verifies a JWT from the Authorization: Bearer <token> header. Used only on
+// the write routes (POST/PUT/DELETE) — GET routes stay public for browsing.
+function authenticate(req, res, next) {
+    const authHeader = req.headers.authorization || "";
+    const [scheme, token] = authHeader.split(" ");
+
+    if (scheme !== "Bearer" || !token) {
+        return res.status(401).send({ error: "Missing or invalid Authorization header." });
+    }
+
+    jwt.verify(token, secret.jwtSecret, (err) => {
+        if (err) {
+            return res.status(401).send({ error: "Invalid or expired token." });
+        }
+        next();
+    });
+}
+
+app.post("/api/login", async (req, res) => {
+    const { password } = req.body;
+
+    if (!password) {
+        return res.status(400).send({ error: "Password is required." });
+    }
+
+    const passwordHash = process.env.APP_PASSWORD_HASH;
+    if (!passwordHash) {
+        console.error("APP_PASSWORD_HASH is not set.");
+        return res.status(500).send({ error: "Server authentication is not configured." });
+    }
+
+    try {
+        const isMatch = await bcrypt.compare(password, passwordHash);
+        if (!isMatch) {
+            return res.status(401).send({ error: "Incorrect password." });
+        }
+
+        const token = jwt.sign({ role: "editor" }, secret.jwtSecret, { expiresIn: "7d" });
+        res.status(200).send({ token });
+    } catch (error) {
+        console.error("Error during login:", error);
+        res.status(500).send({ error: "Login failed." });
+    }
+});
+
+app.post("/api/recipes", authenticate, upload.single("image"), async (req, res) => {
   const { name, instructions, cookingtime } = req.body;
   const servings = JSON.parse(req.body.servings);
   const ingredients = JSON.parse(req.body.ingredients);
@@ -141,7 +188,7 @@ app.post("/api/recipes", upload.single("image"), async (req, res) => {
   }
 });
 
-app.put("/api/recipes", upload.single("image"), async (req, res) => {
+app.put("/api/recipes", authenticate, upload.single("image"), async (req, res) => {
   const { id, name, instructions, cookingtime } = req.body;
 
   let servings;
@@ -316,7 +363,7 @@ app.get("/api/recipes-with-ingredients", async (req, res) => {
   }
 });
 
-app.delete("/api/recipes/:id", async (req, res) => {
+app.delete("/api/recipes/:id", authenticate, async (req, res) => {
   const { id } = req.params;
 
   try {

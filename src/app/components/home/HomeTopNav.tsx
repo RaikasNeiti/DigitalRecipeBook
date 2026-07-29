@@ -1,8 +1,16 @@
 interface HomeTopNavProps {
   onOpenRoulette: () => void;
+  isAuthenticated: boolean;
+  onLoginClick: () => void;
+  onLogoutClick: () => void;
 }
 
-export default function HomeTopNav({ onOpenRoulette }: HomeTopNavProps) {
+export default function HomeTopNav({
+  onOpenRoulette,
+  isAuthenticated,
+  onLoginClick,
+  onLogoutClick,
+}: HomeTopNavProps) {
   return (
     <div className="sticky top-3 z-30 mb-5 flex items-center justify-between gap-4 rounded-2xl px-4 py-3 lg:mb-7">
       <div className="flex items-center gap-3 lg:hidden">
@@ -22,6 +30,14 @@ export default function HomeTopNav({ onOpenRoulette }: HomeTopNavProps) {
           <a href="#" className="border-b-2 border-transparent pb-4 text-sm font-semibold tracking-[0.01em] text-slate-600 transition hover:border-[#417df6] hover:text-[#417df6]">Calendar</a>
         </nav>
       </div>
+
+      <button
+        type="button"
+        onClick={isAuthenticated ? onLogoutClick : onLoginClick}
+        className="shrink-0 rounded-full border border-[#d7e2f1] bg-white px-4 py-2 text-sm font-semibold text-slate-700 transition hover:border-[#417df6] hover:text-[#417df6]"
+      >
+        {isAuthenticated ? "Log Out" : "Log In"}
+      </button>
     </div>
   );
 }
