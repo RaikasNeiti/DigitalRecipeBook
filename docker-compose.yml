@@ -9,8 +9,6 @@ services:
       POSTGRES_USER: ${DB_USER}
       POSTGRES_PASSWORD: ${DB_PASSWORD}
       POSTGRES_DB: ${DB_NAME}
-    ports:
-      - "5432:5432"
     volumes:
       - db_data:/var/lib/postgresql/data
       - ./src/db/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
@@ -27,12 +25,10 @@ services:
       dockerfile: ./src/server/Dockerfile
     ports:
       - "5000:5000"
-    environment:
-      - DB_HOST=${DB_HOST}
-      - DB_PORT=${DB_PORT}
-      - DB_USER=${DB_USER}
-      - DB_PASSWORD=${DB_PASSWORD}
-      - DB_NAME=${DB_NAME}
+    # Loaded verbatim (no ${...} interpolation), so values containing $ like
+    # the bcrypt hash in APP_PASSWORD_HASH aren't misparsed as variable refs.
+    env_file:
+      - .env
     volumes:
       - ./src/server:/recipe/server
       - uploads_data:/recipe/server/uploads

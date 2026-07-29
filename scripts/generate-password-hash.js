@@ -15,8 +15,12 @@ if (!password) {
 bcrypt
   .hash(password, 10)
   .then((hash) => {
+    // Docker Compose treats $ as the start of a variable reference even in
+    // env_file values, so every literal $ in the hash must be doubled to
+    // $$ or Compose silently truncates it down to the "$2b$10" prefix.
+    const escapedHash = hash.replace(/\$/g, "$$$$");
     console.log("Add this line to your .env file:");
-    console.log(`APP_PASSWORD_HASH=${hash}`);
+    console.log(`APP_PASSWORD_HASH=${escapedHash}`);
   })
   .catch((error) => {
     console.error("Failed to hash password:", error);

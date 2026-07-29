@@ -9,7 +9,11 @@ const path = require('path');
 const fs = require('fs');
 
 app.use(bodyParser.json());
-app.use(cors());
+
+const allowedOrigin = process.env.ALLOWED_ORIGIN || 'http://localhost:3000';
+app.use(cors({
+    origin: allowedOrigin,
+}));
 
 // Create Postgres connection pool using environment variables
 const pool = new Pool({
@@ -61,12 +65,6 @@ const upload = multer({
             cb(new Error('Only image files are allowed.'));
         }
     },
-});
-
-app.use(function(req, res, next) {
-    res.header("Access-Control-Allow-Origin", "*");
-    res.header("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept, Authorization");
-    next();
 });
 
 // Verifies a JWT from the Authorization: Bearer <token> header. Used only on

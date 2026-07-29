@@ -116,6 +116,7 @@ apps directly):
 | `DB_PASSWORD`          | db, backend | Postgres password                                      |
 | `DB_NAME`              | db, backend | Postgres database name                                 |
 | `NEXT_PUBLIC_API_BASE` | frontend | Base URL the browser uses to reach the backend, e.g. `http://localhost:5000` |
+| `ALLOWED_ORIGIN`       | backend  | The one origin CORS accepts requests from, e.g. `http://localhost:3000` (must match where the frontend is actually loaded from) |
 | `JWT_SECRET`           | backend  | Signing secret for login tokens (any long random string)   |
 | `APP_PASSWORD_HASH`    | backend  | bcrypt hash of the shared editing password (see below)     |
 
@@ -129,8 +130,8 @@ With `.env` filled in at the repo root:
 docker compose up --build
 ```
 
-This starts three containers: Postgres (`5432`), the Express API (`5000`),
-and the Next.js dev server (`3000`). Open
+This starts three containers: Postgres (internal only — not published to the
+host), the Express API (`5000`), and the Next.js dev server (`3000`). Open
 [http://localhost:3000](http://localhost:3000).
 
 ### Option B: Run without Docker
@@ -151,7 +152,12 @@ routes) stays public and never needs a login.
    npm run hash-password -- "your-password-here"
    ```
 
-2. Copy the printed `APP_PASSWORD_HASH=...` line into your root `.env` file.
+2. Copy the printed `APP_PASSWORD_HASH=...` line into your root `.env` file
+   exactly as printed — the script already doubles every `$` (`$2b$10$...`
+   becomes `$$2b$$10$$...`). This is required: Docker Compose treats `$` as
+   the start of a variable reference even inside `env_file` values, so an
+   unescaped hash gets silently truncated down to `$2b$10` and every login
+   attempt fails with "Incorrect password" no matter what you type.
 3. Make sure `.env` also has a `JWT_SECRET` set (any long random string).
    Restart the backend after changing either value.
 4. On the site, click **Log In** in the top nav and enter the password. The
