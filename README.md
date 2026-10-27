@@ -2,8 +2,8 @@
 
 A self-hosted recipe manager: browse, search, and filter recipes, add your own
 with photos and tags, spin the **Recipe Roulette** when you can't decide what
-to cook, and keep a list of favorites. Editing is gated behind a single shared
-password; browsing is open to anyone.
+to cook, and keep a list of favorites. Editing requires a user account;
+browsing is open to anyone.
 
 ## Features
 
@@ -17,14 +17,15 @@ password; browsing is open to anyone.
 - **Bulk ingredient import** — paste a block of text (one ingredient per
   line, e.g. `2 tbsp olive oil`) and it's parsed into quantity/unit/name rows
   automatically.
-- **Authentication** — a single shared password gates add/edit/delete;
-  reading recipes never requires logging in.
+- **Accounts** — invite-only user accounts with server-side sessions gate
+  add/edit/delete; reading recipes never requires logging in.
 
 ## Tech Stack
 
 - **Frontend**: Next.js (App Router), React 19, TypeScript, Tailwind CSS v4
 - **Backend**: Express, PostgreSQL (via `pg`), Multer for image uploads,
-  bcrypt + JSON Web Tokens for auth
+  bcrypt + express-session (sessions stored in Postgres via
+  connect-pg-simple) for auth
 - **Infra**: Docker Compose (Postgres + backend + frontend containers)
 
 ## Project Structure
@@ -39,13 +40,14 @@ src/
     utils/                 Helpers (e.g. ingredient text parsing)
     page.tsx               Main page, composes everything above
   server/
-    index.js               Express API (routes, auth middleware)
-    config/secret.js        Reads JWT_SECRET from the environment
+    index.js               Express API (routes, sessions, auth middleware)
     uploads/                 Uploaded recipe images (gitignored)
   db/
     init.sql                 Postgres schema, run automatically by the db container
+migrations/
+  001_accounts.sql           Adds the account/session tables to an existing database
 scripts/
-  generate-password-hash.js  CLI to bcrypt-hash a password for APP_PASSWORD_HASH
+  create-admin.js            CLI to create an admin user
 ```
 
 ## Database Schema
@@ -103,6 +105,24 @@ CREATE TABLE recipe_tags (
 but isn't read or written by any route yet — it's reserved for a future unit
 conversion feature.
 
+Accounts live in `users` (usernames are unique case-insensitively, role is
+`admin` or `member`), `invites` and `password_resets` (both store only the
+SHA-256 hash of their token), plus the `session` table used by
+connect-pg-simple. `recipes.created_by` optionally points at the user who
+created the recipe.
+
+### Migrations
+
+`init.sql` only runs when the Postgres volume is empty. To add the account
+tables to an existing database, run the migration once:
+
+```bash
+docker compose exec -T db sh -c 'psql -v ON_ERROR_STOP=1 -U "$POSTGRES_USER" -d "$POSTGRES_DB"' < migrations/001_accounts.sql
+```
+
+The migration runs in a single transaction and uses `IF NOT EXISTS`, so it is
+safe to re-run.
+
 ## Environment Variables
 
 Set these in a root `.env` file (used by both `docker-compose.yml` and the
@@ -117,8 +137,11 @@ apps directly):
 | `DB_NAME`              | db, backend | Postgres database name                                 |
 | `NEXT_PUBLIC_API_BASE` | frontend | Base URL the browser uses to reach the backend, e.g. `http://localhost:5000` |
 | `ALLOWED_ORIGIN`       | backend  | The one origin CORS accepts requests from, e.g. `http://localhost:3000` (must match where the frontend is actually loaded from) |
-| `JWT_SECRET`           | backend  | Signing secret for login tokens (any long random string)   |
-| `APP_PASSWORD_HASH`    | backend  | bcrypt hash of the shared editing password (see below)     |
+| `SESSION_SECRET`       | backend  | **Required** — signs the session cookie; the backend refuses to start without it. Generate with `openssl rand -hex 32` |
+| `COOKIE_SECURE`        | backend  | Optional, default `true` — the session cookie is only sent over HTTPS. Set to `false` only to test over plain http on the LAN |
+
+`openssl rand -hex 32` prints only hex characters (no `$`), so the value can go
+into `.env` as-is; Docker Compose needs no escaping.
 
 ## Getting Started
 
@@ -141,29 +164,31 @@ host), the Express API (`5000`), and the Next.js dev server (`3000`). Open
 3. Run the frontend: `npm run dev` (serves on port 3000).
 4. Run the backend: `cd src/server && node index.js` (serves on port 5000).
 
-## Authentication
+## Accounts
 
-Add/edit/delete requires a single shared password. Browsing (all `GET`
-routes) stays public and never needs a login.
+Add/edit/delete requires logging in with a user account. Browsing (all `GET`
+recipe routes) stays public and never needs a login.
 
-1. Generate a bcrypt hash of the password you want to use:
+Logging in creates a server-side session (stored in Postgres) and sets an
+`httpOnly`, `SameSite=Lax` cookie that lasts 30 days and is renewed on every
+request. Passwords must be at least 10 characters and at most 72 bytes.
 
-   ```bash
-   npm run hash-password -- "your-password-here"
-   ```
+### Creating the first admin
 
-2. Copy the printed `APP_PASSWORD_HASH=...` line into your root `.env` file
-   exactly as printed — the script already doubles every `$` (`$2b$10$...`
-   becomes `$$2b$$10$$...`). This is required: Docker Compose treats `$` as
-   the start of a variable reference even inside `env_file` values, so an
-   unescaped hash gets silently truncated down to `$2b$10` and every login
-   attempt fails with "Incorrect password" no matter what you type.
-3. Make sure `.env` also has a `JWT_SECRET` set (any long random string).
-   Restart the backend after changing either value.
-4. On the site, click **Log In** in the top nav and enter the password. The
-   frontend stores the returned JWT in `localStorage` and sends it as
-   `Authorization: Bearer <token>` on add/edit/delete requests. Tokens expire
-   after 7 days.
+There is no sign-up page for the first user; create an admin from the command
+line inside the backend container (it prompts for the password without
+echoing it):
+
+```bash
+docker compose exec backend node /recipe/scripts/create-admin.js
+```
+
+After creating the user it offers to assign every existing recipe that has no
+owner to the new admin. Without Docker, run `npm run create-admin` from the
+repo root instead.
+
+Further users join through invites (`POST /api/auth/register` with an invite
+token).
 
 ## API Endpoints
 
@@ -171,13 +196,17 @@ routes) stays public and never needs a login.
 | ------ | ----------------------------- | -------------- | ------------------------------------------ |
 | GET    | `/api/recipes-with-ingredients` | no           | List all recipes with ingredients & tags   |
 | GET    | `/api/tags`                     | no           | List all distinct tags                    |
-| POST   | `/api/login`                    | no           | Exchange the shared password for a JWT     |
+| POST   | `/api/auth/login`               | no           | Log in with `{ username, password }`; starts a session |
+| POST   | `/api/auth/logout`              | no           | End the current session                   |
+| GET    | `/api/auth/me`                  | yes          | Current user `{ id, username, display_name, role }`, or 401 |
+| POST   | `/api/auth/register`            | no           | Create an account with `{ inviteToken, username, displayName, password }` |
+| POST   | `/api/auth/change-password`     | yes          | `{ currentPassword, newPassword }`; logs out the user's other sessions |
 | POST   | `/api/recipes`                  | yes          | Create a recipe (multipart form, `image` optional) |
 | PUT    | `/api/recipes`                  | yes          | Update a recipe (multipart form, `id` required) |
 | DELETE | `/api/recipes/:id`              | yes          | Delete a recipe                           |
 
-Authenticated requests need an `Authorization: Bearer <token>` header
-obtained from `POST /api/login`.
+Authenticated requests rely on the session cookie, so browser requests must
+be sent with credentials (`fetch(..., { credentials: "include" })`).
 
 ---
 

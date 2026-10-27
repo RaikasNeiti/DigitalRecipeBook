@@ -26,8 +26,6 @@ services:
     restart: always
     ports:
       - "5000:5000"
-    # Loaded verbatim (no ${...} interpolation), so values containing $ like
-    # the bcrypt hash in APP_PASSWORD_HASH aren't misparsed as variable refs.
     env_file:
       - .env
     volumes:

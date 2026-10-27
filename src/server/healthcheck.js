@@ -1,4 +1,4 @@
-// Used by the Docker healthcheck: node:23-slim has no curl/wget, so this
+// Used by the Docker healthcheck: node:22-slim has no curl/wget, so this
 // hits GET /health with the built-in http module and exits 0/1 accordingly.
 const http = require("http");
 

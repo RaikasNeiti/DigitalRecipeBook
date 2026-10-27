@@ -1,4 +1,45 @@
 -- This SQL script initializes the database
+-- Keep the accounts tables in sync with migrations/001_accounts.sql
+CREATE TABLE users (
+    id SERIAL PRIMARY KEY,
+    username VARCHAR(32) NOT NULL,
+    display_name VARCHAR(100) NOT NULL,
+    password_hash VARCHAR(100) NOT NULL,
+    role VARCHAR(10) NOT NULL CHECK (role IN ('admin', 'member')),
+    disabled BOOLEAN NOT NULL DEFAULT false,
+    created_at TIMESTAMPTZ NOT NULL DEFAULT now()
+);
+
+-- Usernames are unique case-insensitively ("Alice" and "alice" collide)
+CREATE UNIQUE INDEX users_username_lower_idx ON users (LOWER(username));
+
+CREATE TABLE invites (
+    id SERIAL PRIMARY KEY,
+    token_hash CHAR(64) NOT NULL UNIQUE, -- hex SHA-256 of the invite token
+    role VARCHAR(10) NOT NULL CHECK (role IN ('admin', 'member')),
+    created_by INT REFERENCES users(id) ON DELETE SET NULL,
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ,
+    used_by INT REFERENCES users(id) ON DELETE SET NULL
+);
+
+CREATE TABLE password_resets (
+    id SERIAL PRIMARY KEY,
+    user_id INT NOT NULL REFERENCES users(id) ON DELETE CASCADE,
+    token_hash CHAR(64) NOT NULL UNIQUE, -- hex SHA-256 of the reset token
+    expires_at TIMESTAMPTZ NOT NULL,
+    used_at TIMESTAMPTZ
+);
+
+-- Session store for connect-pg-simple
+CREATE TABLE "session" (
+    "sid" VARCHAR NOT NULL COLLATE "default" PRIMARY KEY,
+    "sess" JSON NOT NULL,
+    "expire" TIMESTAMP(6) NOT NULL
+);
+
+CREATE INDEX "IDX_session_expire" ON "session" ("expire");
+
 CREATE TABLE servings (
     id SERIAL PRIMARY KEY,
     amount DECIMAL(10, 2),
@@ -12,6 +53,7 @@ CREATE TABLE recipes (
     cookingtime INT,
     servings_id INT,
     image_path VARCHAR(255),
+    created_by INT REFERENCES users(id) ON DELETE SET NULL,
     FOREIGN KEY (servings_id) REFERENCES servings(id)
 );
 
