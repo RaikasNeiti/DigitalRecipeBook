@@ -1,5 +1,5 @@
 # Use Node.js LTS as the base image
-FROM node:23-slim
+FROM node:22-slim
 # Set the working directory
 WORKDIR /recipe/
 
